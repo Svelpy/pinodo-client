@@ -1,0 +1,34 @@
+{
+	"id": "/",
+	"name": "TUPA CLUB",
+	"short_name": "TUPA CLUB",
+	"description": "Suma puntos con tus compras en los negocios afiliados y canjéalos por vales.",
+	"lang": "es",
+	"dir": "ltr",
+	"start_url": "/app",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#051831",
+	"theme_color": "#ffffff",
+	"categories": ["shopping", "lifestyle"],
+	"icons": [
+		{
+			"src": "/icons/icon-192.png",
+			"type": "image/png",
+			"sizes": "192x192",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-512.png",
+			"type": "image/png",
+			"sizes": "512x512",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-maskable-512.png",
+			"type": "image/png",
+			"sizes": "512x512",
+			"purpose": "maskable"
+		}
+	]
+}

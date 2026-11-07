@@ -1,0 +1,17 @@
+export { default as ProductoActions } from './productoActions.svelte';
+export { default as ProductoCard } from './productoCard.svelte';
+export { default as ProductoCategoriasField } from './productoCategoriasField.svelte';
+export { default as ProductoColorCard } from './productoColorCard.svelte';
+export { default as ProductoColores } from './productoColores.svelte';
+export { default as ProductoDatosSection } from './productoDatosSection.svelte';
+export { default as ProductoDeleteModal } from './productoDeleteModal.svelte';
+export { default as ProductoFicha } from './productoFicha.svelte';
+export { default as ProductoFichaColor } from './productoFichaColor.svelte';
+export { default as ProductoFilters } from './productoFilters.svelte';
+export { default as ProductoForm } from './productoForm.svelte';
+export { default as ProductoImagenesField } from './productoImagenesField.svelte';
+export { default as ProductoList } from './productoList.svelte';
+export { default as ProductoPortada } from './productoPortada.svelte';
+export { default as ProductoRow } from './productoRow.svelte';
+export { default as ProductoSkuRow } from './productoSkuRow.svelte';
+export { default as ProductoTable } from './productoTable.svelte';
