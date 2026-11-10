@@ -11,7 +11,7 @@
 >
 	<header class="border-b border-light-one_d dark:border-dark-one_d">
 		<div class="container mx-auto flex items-center px-4 py-4 md:px-6">
-			<a href={resolve('/')} class="flex items-center gap-2.5">
+			<a href={resolve('/(tienda)')} class="flex items-center gap-2.5">
 				<img
 					src={asset('images/logo_mark.webp')}
 					alt=""

@@ -133,6 +133,65 @@ export interface CreateProductoRequest {
 	colores: CreateProductoColorRequest[];
 }
 
+/**
+ * `PATCH /productos/{id}`: solo los campos cambiados; los textos opcionales aceptan null para
+ * borrarlos. `categoria_ids` reemplaza las categorías ([] quita todas); cambiar de sección sin
+ * enviarlas quita todas, porque pertenecen a la sección anterior.
+ */
+export type UpdateProductoRequest = Partial<Omit<CreateProductoRequest, 'colores'>>;
+
+/** `POST /producto-colores/`: añade un color (con imágenes y SKUs) a un producto existente */
+export interface AddProductoColorRequest extends CreateProductoColorRequest {
+	producto_id: string;
+}
+
+/**
+ * Fila de un SKU existente en `PATCH /producto-colores/{id}`: solo los campos cambiados (el precio
+ * va completo). No acepta stock: se ajusta con `PATCH /skus/{id}`
+ */
+export type UpdateProductoColorSkuRow = { id: string } & Partial<
+	Omit<CreateProductoSkuRequest, 'stock'>
+>;
+
+/**
+ * `PATCH /producto-colores/{id}`: lo omitido no cambia. `imagenes` reemplaza la galería
+ * (emparejando por url). En `skus`, una fila con `id` actualiza ese SKU y una sin `id` crea uno nuevo.
+ */
+export interface UpdateProductoColorRequest {
+	color_id?: string;
+	is_visible?: boolean;
+	imagenes?: CreateProductoImagenRequest[];
+	skus?: (UpdateProductoColorSkuRow | CreateProductoSkuRequest)[];
+	/** Elimina esos SKUs y libera su talla y código de barras para las filas de la misma petición */
+	sku_ids_eliminar?: string[];
+}
+
+/**
+ * `PATCH /skus/{id}`: solo lo enviado, también dentro de precio. `precio.rebajado: null` quita la
+ * rebaja y su fecha; `codigo_barras: null` lo quita. El stock se ajusta con `PATCH /skus/{id}/stock`.
+ */
+export interface UpdateSkuRequest {
+	talla_id?: string;
+	codigo_barras?: string | null;
+	is_visible?: boolean;
+	precio?: Partial<ProductoPrecio>;
+}
+
+/**
+ * `PATCH /skus/{id}/stock`: se envía `ajuste`, `minimo` o ambos. `ajuste` es cuántas prendas entran
+ * (positivo) o salen (negativo); se suma al stock actual y no puede ser 0.
+ */
+export interface AjustarStockRequest {
+	ajuste?: number;
+	minimo?: number;
+}
+
+/** `POST /skus/sugerir-codigo-barras` */
+export interface SugerirCodigoBarrasResponse {
+	/** EAN-13 de 13 dígitos */
+	codigo_barras: string;
+}
+
 export interface ListProductosParams extends PaginationParams {
 	seccion_id?: string;
 	/** Productos de esa categoría o de cualquiera de sus subcategorías */
@@ -141,6 +200,9 @@ export interface ListProductosParams extends PaginationParams {
 	/** Coincidencias parciales (máx. 200 caracteres) */
 	nombre?: string;
 }
+
+/** Qué se está editando en la ficha del producto (un editor a la vez); `colorId: null` = añadir */
+export type ProductoFichaEdicion = { tipo: 'datos' } | { tipo: 'color'; colorId: string | null };
 
 // ── Estado del formulario de alta: lo que escribe el usuario, todo como texto ────────────────────
 
@@ -161,10 +223,14 @@ export interface ProductoFormImagen {
 	tipo: ImagenTipo;
 	/** Motivo del fallo cuando `status` es `error` */
 	error: string;
+	/** Ya guardada en el producto (al editar): no tiene archivo y `preview` es su url */
+	existing?: boolean;
 }
 
 export interface ProductoFormSku {
 	key: string;
+	/** Id del SKU ya guardado (al editar). Sin id es un SKU nuevo */
+	id?: string;
 	talla_id: string;
 	codigo_barras: string;
 	is_visible: boolean;

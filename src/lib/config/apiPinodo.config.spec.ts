@@ -47,4 +47,17 @@ describe('apiPinodo sin token', () => {
 
 		expect(auth.expireSession).not.toHaveBeenCalled();
 	});
+
+	it('una petición pública usa el fetch indicado (load con SSR) y no envía token', async () => {
+		auth.getToken.mockReturnValue('token');
+		const loadFetch = vi.fn(async () => new Response('{"ok":1}', { status: 200 }));
+
+		await expect(apiPinodo.getPublic('/tienda/config', { fetch: loadFetch })).resolves.toEqual({
+			ok: 1
+		});
+
+		expect(fetchMock).not.toHaveBeenCalled();
+		const [, init] = loadFetch.mock.calls[0] as unknown as [string, RequestInit];
+		expect(init.headers).not.toHaveProperty('Authorization');
+	});
 });

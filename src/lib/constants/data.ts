@@ -65,3 +65,69 @@ export const IMAGEN_TIPO_LABEL: Record<ImagenTipo, string> = {
 export const IMAGEN_LIMITS = {
 	MAX_BYTES: 5 * 1024 * 1024
 } as const;
+
+/** Estados de una venta: PENDIENTE = pedido sin cobrar; CONFIRMADA = cobrada (descontó stock) */
+export const VENTA_ESTADO = {
+	PENDIENTE: 'PENDIENTE',
+	CONFIRMADA: 'CONFIRMADA',
+	CANCELADA: 'CANCELADA'
+} as const;
+export type VentaEstado = (typeof VENTA_ESTADO)[keyof typeof VENTA_ESTADO];
+
+export const VENTA_ESTADO_LABEL: Record<VentaEstado, string> = {
+	PENDIENTE: 'Pendiente',
+	CONFIRMADA: 'Cobrada',
+	CANCELADA: 'Cancelada'
+};
+
+/** Variante de `Badge` para cada estado */
+export const VENTA_ESTADO_BADGE: Record<VentaEstado, 'warning' | 'success' | 'error'> = {
+	PENDIENTE: 'warning',
+	CONFIRMADA: 'success',
+	CANCELADA: 'error'
+};
+
+/** Por dónde llegó la venta: pedido de WhatsApp (ecommerce) o mostrador */
+export const VENTA_CANAL = {
+	TIENDA: 'TIENDA',
+	WHATSAPP: 'WHATSAPP'
+} as const;
+export type VentaCanal = (typeof VENTA_CANAL)[keyof typeof VENTA_CANAL];
+
+export const VENTA_CANAL_LABEL: Record<VentaCanal, string> = {
+	TIENDA: 'Tienda',
+	WHATSAPP: 'WhatsApp'
+};
+
+export const METODO_PAGO = {
+	EFECTIVO: 'EFECTIVO',
+	QR: 'QR',
+	TRANSFERENCIA: 'TRANSFERENCIA'
+} as const;
+export type MetodoPago = (typeof METODO_PAGO)[keyof typeof METODO_PAGO];
+
+export const METODO_PAGO_LABEL: Record<MetodoPago, string> = {
+	EFECTIVO: 'Efectivo',
+	QR: 'QR',
+	TRANSFERENCIA: 'Transferencia'
+};
+
+/** Rangos de fecha rápidos del historial de ventas */
+export const RANGO_FECHA = {
+	HOY: 'HOY',
+	AYER: 'AYER',
+	SIETE_DIAS: 'SIETE_DIAS',
+	MES: 'MES',
+	TODO: 'TODO',
+	PERSONALIZADO: 'PERSONALIZADO'
+} as const;
+export type RangoFecha = (typeof RANGO_FECHA)[keyof typeof RANGO_FECHA];
+
+export const RANGO_FECHA_LABEL: Record<RangoFecha, string> = {
+	HOY: 'Hoy',
+	AYER: 'Ayer',
+	SIETE_DIAS: 'Últimos 7 días',
+	MES: 'Este mes',
+	TODO: 'Todas las fechas',
+	PERSONALIZADO: 'Personalizado'
+};

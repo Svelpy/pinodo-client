@@ -8,8 +8,8 @@
 
 	interface Props {
 		color: ProductoFormColor;
-		/** 1, 2, 3… para el título de la tarjeta */
-		position: number;
+		/** 1, 2, 3… para la etiqueta; sin valor, solo «Color» (p. ej. al editar un color suelto) */
+		position?: number;
 		/** Catálogo de colores y los que ya usan las otras tarjetas (no se repiten) */
 		colores: readonly Color[];
 		usedColorIds: readonly string[];
@@ -17,8 +17,11 @@
 		/** Ruta del color en el formulario (`colores.0`), para buscar sus errores */
 		path: string;
 		errors: Record<string, string>;
+		/** Códigos de barras de todo el formulario (al crear un producto, de todos sus colores) */
+		usedBarcodes?: readonly string[];
 		disabled?: boolean;
-		onRemove: () => void;
+		/** Sin handler no se muestra «Quitar color» (al editar, eliminar es una acción aparte) */
+		onRemove?: () => void;
 	}
 
 	let {
@@ -29,6 +32,7 @@
 		tallas,
 		path,
 		errors,
+		usedBarcodes,
 		disabled = false,
 		onRemove
 	}: Props = $props();
@@ -37,6 +41,8 @@
 
 	const selected = $derived(colores.find((item) => item.id === color.color_id));
 	const usedTallaIds = $derived(color.skus.map((sku) => sku.talla_id).filter(Boolean));
+	// Sin lista del formulario completo, al menos no se repiten dentro de este color
+	const barcodes = $derived(usedBarcodes ?? color.skus.map((sku) => sku.codigo_barras.trim()));
 	// Cuando ya hay un SKU por cada talla no se puede agregar otro
 	const canAddSku = $derived(tallas.length > color.skus.length);
 
@@ -53,7 +59,7 @@
 			<ColorSwatch hex={selected?.codigo_hex ?? '#FFFFFF'} class="mb-1.5 size-8" />
 			<Select
 				id="{id}-color"
-				label="Color {position}"
+				label={position ? `Color ${position}` : 'Color'}
 				class="min-w-0 flex-1"
 				bind:value={color.color_id}
 				error={errors[`${path}.color_id`]}
@@ -85,10 +91,12 @@
 			<option value="false">Oculto</option>
 		</Select>
 
-		<Button variant="outline" onclick={onRemove} {disabled} class="w-full sm:w-auto">
-			{#snippet leftIcon()}<TrashIcon class="size-4" />{/snippet}
-			Quitar color
-		</Button>
+		{#if onRemove}
+			<Button variant="outline" onclick={onRemove} {disabled} class="w-full sm:w-auto">
+				{#snippet leftIcon()}<TrashIcon class="size-4" />{/snippet}
+				Quitar color
+			</Button>
+		{/if}
 	</div>
 
 	<div class="space-y-5 p-3 sm:p-4">
@@ -124,6 +132,7 @@
 					)}
 					path="{path}.skus.{index}"
 					{errors}
+					usedBarcodes={barcodes}
 					{disabled}
 					onRemove={() => removeSku(sku.key)}
 				/>

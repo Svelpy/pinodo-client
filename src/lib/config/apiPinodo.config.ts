@@ -7,6 +7,11 @@ interface RequestOptions {
 	customHeaders?: HeadersInit;
 	// Enviar/recibir cookies (p. ej. refresh_token HttpOnly)
 	withCredentials?: boolean;
+	/**
+	 * `fetch` a usar; por defecto el global. En el `load` de una página con SSR se pasa el de
+	 * SvelteKit, que reutiliza en el navegador la respuesta obtenida en el servidor.
+	 */
+	fetch?: typeof fetch;
 }
 
 class ApiPinodo {
@@ -63,7 +68,8 @@ class ApiPinodo {
 				delete (headers as Record<string, string>)['Content-Type'];
 			}
 
-			return await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+			const fetchFn = options.fetch ?? fetch;
+			return await fetchFn(`${API_CONFIG.BASE_URL}${endpoint}`, {
 				method,
 				headers,
 				body: isRawBody ? (data as BodyInit) : data ? JSON.stringify(data) : undefined,
@@ -134,8 +140,8 @@ class ApiPinodo {
 	}
 
 	// Métodos específicos para endpoints que no requieren autenticación
-	async getPublic<T>(endpoint: string): Promise<T> {
-		return this.get<T>(endpoint, { requireAuth: false });
+	async getPublic<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+		return this.get<T>(endpoint, { ...options, requireAuth: false });
 	}
 
 	async postPublic<T>(endpoint: string, data: unknown, options: RequestOptions = {}): Promise<T> {

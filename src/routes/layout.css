@@ -123,3 +123,16 @@ body {
 	animation-duration: 180ms;
 	animation-timing-function: ease-out;
 }
+
+/* Tienda pública: texto editorial pequeño en mayúsculas (menú, nombres, precios) */
+@utility text-editorial {
+	font-size: 0.75rem;
+	line-height: 1.6;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+
+	/* Preflight deja los botones en text-transform: none */
+	& button {
+		text-transform: inherit;
+	}
+}

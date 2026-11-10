@@ -78,6 +78,8 @@ export const productoImagenSchema = z.object({
 });
 
 export const productoSkuSchema = z.object({
+	/** SKU ya guardado (al editar un color). Su stock no se envía con el color */
+	id: z.string().optional(),
 	talla_id: z
 		.string()
 		.nonempty({ message: 'Selecciona una talla' })
@@ -124,20 +126,52 @@ export const productoColorSchema = z
 		});
 	});
 
-export const productoSchema = z
+/** Datos generales y categorías: los mismos al crear y al editar (`PATCH /productos/{id}`) */
+export const productoDatosSchema = z.object({
+	seccion_id: z
+		.string()
+		.nonempty({ message: 'Selecciona una sección' })
+		.refine(isUuid, { message: 'La sección seleccionada no es válida.' }),
+	nombre: requiredText(PRODUCTO_LIMITS.NOMBRE_MAX, 'El nombre'),
+	descripcion: optionalText(PRODUCTO_LIMITS.DESCRIPCION_MAX, 'La descripción'),
+	cuidados: optionalText(PRODUCTO_LIMITS.CUIDADOS_MAX, 'Los cuidados'),
+	composicion: optionalText(PRODUCTO_LIMITS.COMPOSICION_MAX, 'La composición'),
+	is_visible: z.boolean(),
+	categoria_ids: z.array(z.string().refine(isUuid, { message: 'Categoría no válida.' }))
+});
+
+/**
+ * Ajuste de stock de un SKU (`PATCH /skus/{id}/stock`). La API recibe `ajuste` (cuántas prendas
+ * entran o salen, distinto de 0) y/o `minimo`; al menos uno. Aquí el usuario indica el sentido
+ * (entrada o salida) y una cantidad positiva, y el resultado ya trae `ajuste` con su signo.
+ */
+export const skuStockSchema = z
 	.object({
-		seccion_id: z
+		movimiento: z.enum(['entrada', 'salida']),
+		cantidad: z
 			.string()
-			.nonempty({ message: 'Selecciona una sección' })
-			.refine(isUuid, { message: 'La sección seleccionada no es válida.' }),
-		nombre: requiredText(PRODUCTO_LIMITS.NOMBRE_MAX, 'El nombre'),
-		descripcion: optionalText(PRODUCTO_LIMITS.DESCRIPCION_MAX, 'La descripción'),
-		cuidados: optionalText(PRODUCTO_LIMITS.CUIDADOS_MAX, 'Los cuidados'),
-		composicion: optionalText(PRODUCTO_LIMITS.COMPOSICION_MAX, 'La composición'),
-		is_visible: z.boolean(),
-		categoria_ids: z.array(z.string().refine(isUuid, { message: 'Categoría no válida.' })),
-		colores: z.array(productoColorSchema)
+			.trim()
+			.refine((value) => value === '' || /^[1-9]\d*$/.test(value), {
+				message: 'La cantidad debe ser un número entero mayor que 0.'
+			}),
+		minimo: z
+			.string()
+			.trim()
+			.refine((value) => value === '' || INTEGER_REGEX.test(value), {
+				message: 'El mínimo debe ser un número entero, 0 o mayor.'
+			})
 	})
+	.refine(({ cantidad, minimo }) => cantidad !== '' || minimo !== '', {
+		path: ['cantidad'],
+		message: 'Indica una cantidad que entra o sale, o un nuevo mínimo.'
+	})
+	.transform(({ movimiento, cantidad, minimo }) => ({
+		ajuste: cantidad === '' ? null : (movimiento === 'salida' ? -1 : 1) * Number(cantidad),
+		minimo: minimo === '' ? null : Number(minimo)
+	}));
+
+export const productoSchema = productoDatosSchema
+	.extend({ colores: z.array(productoColorSchema) })
 	.superRefine((producto, ctx) => {
 		const colores = new Set<string>();
 		producto.colores.forEach((color, index) => {
@@ -154,3 +188,7 @@ export const productoSchema = z
 
 /** Lo que maneja el formulario: texto en los números y fechas, antes de convertirlo */
 export type ProductoInput = z.input<typeof productoSchema>;
+export type ProductoColorInput = z.input<typeof productoColorSchema>;
+/** Ya validado y convertido a los tipos de la API */
+export type ProductoColorParsed = z.output<typeof productoColorSchema>;
+export type ProductoDatosParsed = z.output<typeof productoDatosSchema>;

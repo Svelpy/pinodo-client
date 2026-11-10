@@ -265,3 +265,10 @@ export function formatBoolean(
 
 	return value ? (options?.trueLabel ?? 'Sí') : (options?.falseLabel ?? 'No');
 }
+
+/** Número correlativo de una venta (p. ej. 12 → "#000012") */
+export function formatVentaNumero(value: number | null | undefined, options?: BaseOptions): string {
+	const fallback = options?.fallback ?? NO_DATA_LABEL;
+	if (isNullish(value)) return fallback;
+	return `#${String(value).padStart(6, '0')}`;
+}

@@ -9,10 +9,11 @@
 
 	interface Props {
 		producto: Producto;
+		onToggleVisible?: (producto: Producto) => void;
 		onDelete?: (producto: Producto) => void;
 	}
 
-	let { producto, onDelete }: Props = $props();
+	let { producto, onToggleVisible, onDelete }: Props = $props();
 
 	const sinStock = $derived(producto.resumen.stock_total === 0);
 </script>
@@ -57,6 +58,6 @@
 		</p>
 	</div>
 	<div class="-mt-1.5 -mr-2 shrink-0 self-start">
-		<ProductoActions {producto} {onDelete} />
+		<ProductoActions {producto} {onToggleVisible} {onDelete} />
 	</div>
 </article>

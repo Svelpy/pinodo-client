@@ -2,16 +2,20 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { DropdownMenu } from '#lib/components/ui/index.ts';
-	import { DotsVerticalIcon, EyeIcon, TrashIcon } from '#lib/icons/outline/index.ts';
+	import { DotsVerticalIcon, EyeIcon, EyeOffIcon, TrashIcon } from '#lib/icons/outline/index.ts';
 	import type { DropdownOption, Producto } from '#lib/interfaces/index.ts';
 
-	/** Ver la ficha siempre está disponible; eliminar solo si se pasa el handler (según permisos) */
+	/**
+	 * Ver la ficha siempre está disponible; cambiar la visibilidad y eliminar solo si se pasa el
+	 * handler (según permisos)
+	 */
 	interface Props {
 		producto: Producto;
+		onToggleVisible?: (producto: Producto) => void;
 		onDelete?: (producto: Producto) => void;
 	}
 
-	let { producto, onDelete }: Props = $props();
+	let { producto, onToggleVisible, onDelete }: Props = $props();
 
 	let isOpen = $state(false);
 	let trigger = $state<HTMLButtonElement>();
@@ -23,6 +27,12 @@
 				label: 'Ver ficha',
 				icon: EyeIcon,
 				action: () => goto(resolve('/panel/productos/[id]', { id: producto.id }))
+			},
+			onToggleVisible && {
+				id: 'toggle-visible',
+				label: producto.is_visible ? 'Ocultar' : 'Hacer visible',
+				icon: producto.is_visible ? EyeOffIcon : EyeIcon,
+				action: () => onToggleVisible(producto)
 			},
 			onDelete && {
 				id: 'delete',

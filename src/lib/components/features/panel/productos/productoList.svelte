@@ -20,7 +20,8 @@
 		onPageChange: (page: number) => void;
 		onPerPageChange?: (perPage: number) => void;
 		onRetry?: () => void;
-		/** Opcional: sin handler (según permisos) la opción Eliminar no se muestra */
+		/** Opcionales: sin handler (según permisos) la opción correspondiente no se muestra */
+		onToggleVisible?: (producto: Producto) => void;
 		onDelete?: (producto: Producto) => void;
 	}
 
@@ -36,6 +37,7 @@
 		onPageChange,
 		onPerPageChange,
 		onRetry,
+		onToggleVisible,
 		onDelete
 	}: Props = $props();
 
@@ -97,13 +99,13 @@
 			<!-- Móvil y tablet pequeña: tarjetas -->
 			<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden">
 				{#each productos as producto (producto.id)}
-					<ProductoCard {producto} {onDelete} />
+					<ProductoCard {producto} {onToggleVisible} {onDelete} />
 				{/each}
 			</div>
 
 			<!-- Tablet y escritorio: tabla -->
 			<div class="hidden md:block">
-				<ProductoTable {productos} {onDelete} />
+				<ProductoTable {productos} {onToggleVisible} {onDelete} />
 			</div>
 		</div>
 

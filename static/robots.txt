@@ -1,3 +1,6 @@
-# allow crawling everything by default
+# La tienda pública se indexa; el panel y el login no
 User-agent: *
-Disallow:
+Disallow: /panel
+Disallow: /auth
+Disallow: /cesta
+Disallow: /buscar

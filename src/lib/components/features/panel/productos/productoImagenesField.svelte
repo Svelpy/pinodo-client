@@ -72,7 +72,8 @@
 
 	function remove(key: string) {
 		const target = imagenes.find((imagen) => imagen.key === key);
-		if (target) URL.revokeObjectURL(target.preview);
+		// Las ya guardadas muestran su url remota: no hay URL temporal que liberar
+		if (target && !target.existing) URL.revokeObjectURL(target.preview);
 		imagenes = imagenes.filter((imagen) => imagen.key !== key);
 	}
 
@@ -94,7 +95,7 @@
 	}
 
 	onDestroy(() => {
-		for (const imagen of imagenes) URL.revokeObjectURL(imagen.preview);
+		for (const imagen of imagenes) if (!imagen.existing) URL.revokeObjectURL(imagen.preview);
 	});
 </script>
 

@@ -9,10 +9,11 @@
 
 	interface Props {
 		producto: Producto;
+		onToggleVisible?: (producto: Producto) => void;
 		onDelete?: (producto: Producto) => void;
 	}
 
-	let { producto, onDelete }: Props = $props();
+	let { producto, onToggleVisible, onDelete }: Props = $props();
 
 	const sinStock = $derived(producto.resumen.stock_total === 0);
 </script>
@@ -64,6 +65,6 @@
 		{formatDate(producto.created_at)}
 	</TableCell>
 	<TableCell class="px-2 py-3 text-right">
-		<ProductoActions {producto} {onDelete} />
+		<ProductoActions {producto} {onToggleVisible} {onDelete} />
 	</TableCell>
 </TableRow>

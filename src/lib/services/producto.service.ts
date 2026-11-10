@@ -4,11 +4,15 @@ import type {
 	ListProductosParams,
 	PaginatedResponse,
 	Producto,
-	ProductoDetalle
+	ProductoDetalle,
+	UpdateProductoRequest
 } from '#lib/interfaces/index.ts';
 import { buildPaginationQuery } from '#lib/utils/index.ts';
 
-/** Gestión de los productos del catálogo (`/productos/`). La API no tiene edición */
+/**
+ * Gestión de los productos del catálogo (`/productos/`). Los colores, imágenes y SKUs de un producto
+ * existente se editan con `productoColorService` y `skuService`.
+ */
 class ProductoService {
 	/** Del más reciente al más antiguo. `categoria_id` incluye las subcategorías */
 	async list({
@@ -41,6 +45,14 @@ class ProductoService {
 	 */
 	async create(data: CreateProductoRequest): Promise<ProductoDetalle> {
 		return apiPinodo.post<ProductoDetalle>('/productos/', data, { requireAuth: true });
+	}
+
+	/**
+	 * Datos generales y categorías; responde la ficha completa. Cambiar de sección sin enviar
+	 * `categoria_ids` quita todas las categorías.
+	 */
+	async update(id: string, data: UpdateProductoRequest): Promise<ProductoDetalle> {
+		return apiPinodo.patch<ProductoDetalle>(`/productos/${id}`, data, { requireAuth: true });
 	}
 
 	/** Eliminación lógica en cascada: también elimina sus colores, imágenes y SKUs */

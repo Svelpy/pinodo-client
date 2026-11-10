@@ -5,10 +5,11 @@
 
 	interface Props {
 		productos: Producto[];
+		onToggleVisible?: (producto: Producto) => void;
 		onDelete?: (producto: Producto) => void;
 	}
 
-	let { productos, onDelete }: Props = $props();
+	let { productos, onToggleVisible, onDelete }: Props = $props();
 
 	const headClass = 'h-11 text-xs tracking-wide text-light-two_d uppercase dark:text-dark-two_d';
 </script>
@@ -30,7 +31,7 @@
 		</TableHeader>
 		<TableBody>
 			{#each productos as producto (producto.id)}
-				<ProductoRow {producto} {onDelete} />
+				<ProductoRow {producto} {onToggleVisible} {onDelete} />
 			{/each}
 		</TableBody>
 	</Table>

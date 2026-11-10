@@ -56,7 +56,12 @@ describe('productoService', () => {
 		expect(api.delete).toHaveBeenCalledWith('/productos/abc', undefined, AUTH);
 	});
 
-	it('no expone edición: la API no tiene PATCH de productos', () => {
-		expect('update' in productoService).toBe(false);
+	it('update envía solo los datos generales al PATCH del producto', async () => {
+		await productoService.update('abc', { nombre: 'Camisa slim', categoria_ids: [] });
+		expect(api.patch).toHaveBeenCalledWith(
+			'/productos/abc',
+			{ nombre: 'Camisa slim', categoria_ids: [] },
+			AUTH
+		);
 	});
 });

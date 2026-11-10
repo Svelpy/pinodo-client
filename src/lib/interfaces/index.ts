@@ -12,3 +12,5 @@ export * from './seccion.interface';
 export * from './talla.interface';
 export * from './tienda.interface';
 export * from './usuario.interface';
+export * from './venta.interface';
+export * from './tiendaPublica.interface';

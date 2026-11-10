@@ -5,3 +5,7 @@ export const USER_DATA_KEY = 'pinodo::auth::ud';
 export const TIENDA_DATA_KEY = 'pinodo::tienda::data';
 // Nombre del Web Lock que serializa el refresh del token entre pestañas
 export const REFRESH_LOCK_KEY = 'pinodo::auth::refresh';
+// Venta en curso de la caja (carrito y datos del cobro) para no perderla al recargar
+export const VENTA_BORRADOR_KEY = 'pinodo::venta::borrador';
+// Cesta de la tienda pública (no se borra al cerrar sesión del panel)
+export const CESTA_KEY = 'pinodo::tienda::cesta';

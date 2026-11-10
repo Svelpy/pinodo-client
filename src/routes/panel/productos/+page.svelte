@@ -19,9 +19,10 @@
 		seccionService
 	} from '#lib/services/index.ts';
 	import { currentRole } from '#lib/stores/index.ts';
-	import { can, flattenCategoriaArbol, getCategoriaOptions } from '#lib/utils/index.ts';
+	import { alert, can, flattenCategoriaArbol, getCategoriaOptions } from '#lib/utils/index.ts';
 
 	const canCreate = $derived(can($currentRole, Module.PRODUCTO, Action.CREATE));
+	const canUpdate = $derived(can($currentRole, Module.PRODUCTO, Action.UPDATE));
 	const canDelete = $derived(can($currentRole, Module.PRODUCTO, Action.DELETE));
 
 	let productos = $state<Producto[]>([]);
@@ -138,6 +139,32 @@
 		reloadFromStart();
 	}
 
+	// Productos con un cambio de visibilidad en curso: evita dobles envíos
+	const toggling: Record<string, true> = {};
+
+	/**
+	 * Mismo endpoint que editar el producto, solo con `is_visible`. La fila se actualiza localmente
+	 * (aunque haya un filtro de visibilidad activo, para no hacerla desaparecer de golpe).
+	 */
+	async function handleToggleVisible({ id, nombre, is_visible }: Producto) {
+		if (toggling[id]) return;
+		toggling[id] = true;
+		try {
+			const saved = await productoService.update(id, { is_visible: !is_visible });
+			productos = productos.map((producto) =>
+				producto.id === id ? { ...producto, is_visible: saved.is_visible } : producto
+			);
+			alert(
+				'success',
+				saved.is_visible ? `«${nombre}» ahora es visible.` : `«${nombre}» ahora está oculto.`
+			);
+		} catch (error) {
+			alert('error', errorService.getMessage(error));
+		} finally {
+			delete toggling[id];
+		}
+	}
+
 	// Se quita la fila localmente para no volver a pedir el listado
 	function handleDeleted({ id }: Pick<Producto, 'id' | 'nombre'>) {
 		productos = productos.filter((producto) => producto.id !== id);
@@ -178,7 +205,7 @@
 		{/if}
 	</div>
 
-	<!-- Ver la ficha siempre está disponible; Eliminar solo si el rol tiene permiso -->
+	<!-- Ver la ficha siempre está disponible; Ocultar/Hacer visible y Eliminar según el permiso -->
 	<ProductoList
 		{productos}
 		{hasFilters}
@@ -191,6 +218,7 @@
 		onPageChange={loadProductos}
 		onPerPageChange={handlePerPageChange}
 		onRetry={() => loadProductos(currentPage)}
+		onToggleVisible={canUpdate ? handleToggleVisible : undefined}
 		onDelete={canDelete ? (producto) => (deletingProducto = producto) : undefined}
 	/>
 

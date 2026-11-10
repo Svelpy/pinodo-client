@@ -10,7 +10,8 @@
 		TableRow
 	} from '#lib/components/ui/index.ts';
 	import { IMAGEN_TIPO_LABEL } from '#lib/constants/index.ts';
-	import type { ProductoColor } from '#lib/interfaces/index.ts';
+	import { BoxIcon, PencilIcon, TrashIcon } from '#lib/icons/outline/index.ts';
+	import type { ProductoColor, ProductoSku } from '#lib/interfaces/index.ts';
 	import {
 		formatBoolean,
 		formatCurrency,
@@ -19,11 +20,20 @@
 		formatValue
 	} from '#lib/utils/index.ts';
 
+	/** Las acciones sin handler (según permisos) no se muestran */
 	interface Props {
 		color: ProductoColor;
+		onEdit?: () => void;
+		onDelete?: () => void;
+		onAdjustStock?: (sku: ProductoSku) => void;
+		/** Otro editor de la ficha está abierto: las acciones se deshabilitan */
+		disabled?: boolean;
 	}
 
-	let { color }: Props = $props();
+	let { color, onEdit, onDelete, onAdjustStock, disabled = false }: Props = $props();
+
+	const ICON_BUTTON =
+		'inline-flex size-9 items-center justify-center text-light-two_d transition-colors hover:bg-light-one_d hover:text-light-two focus-visible:ring-2 focus-visible:ring-light-three focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 dark:text-dark-two_d dark:hover:bg-dark-one_d dark:hover:text-dark-two';
 
 	const headClass = 'h-10 text-xs tracking-wide text-light-two_d uppercase dark:text-dark-two_d';
 </script>
@@ -42,6 +52,34 @@
 		<Badge variant={color.is_visible ? 'success' : 'secondary'} dot>
 			{formatBoolean(color.is_visible, { trueLabel: 'Visible', falseLabel: 'Oculto' })}
 		</Badge>
+		{#if onEdit || onDelete}
+			<div class="flex items-center gap-1">
+				{#if onEdit}
+					<button
+						type="button"
+						onclick={onEdit}
+						{disabled}
+						aria-label="Editar el color {color.color.nombre}"
+						title="Editar color"
+						class={ICON_BUTTON}
+					>
+						<PencilIcon class="size-5" />
+					</button>
+				{/if}
+				{#if onDelete}
+					<button
+						type="button"
+						onclick={onDelete}
+						{disabled}
+						aria-label="Eliminar el color {color.color.nombre} del producto"
+						title="Eliminar color"
+						class={ICON_BUTTON}
+					>
+						<TrashIcon class="size-5" />
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</header>
 
 	<div class="space-y-5 p-3 sm:p-4">
@@ -94,6 +132,11 @@
 								<TableHead class={headClass}>Vigente</TableHead>
 								<TableHead class={headClass}>Stock</TableHead>
 								<TableHead class={headClass}>Visibilidad</TableHead>
+								{#if onAdjustStock}
+									<TableHead class="h-10 w-14 px-2">
+										<span class="sr-only">Acciones</span>
+									</TableHead>
+								{/if}
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -137,6 +180,20 @@
 											})}
 										</Badge>
 									</TableCell>
+									{#if onAdjustStock}
+										<TableCell class="px-2 py-1 text-right">
+											<button
+												type="button"
+												onclick={() => onAdjustStock(sku)}
+												{disabled}
+												aria-label="Ajustar stock de la talla {sku.talla.etiqueta}"
+												title="Ajustar stock"
+												class={ICON_BUTTON}
+											>
+												<BoxIcon class="size-5" />
+											</button>
+										</TableCell>
+									{/if}
 								</TableRow>
 							{/each}
 						</TableBody>

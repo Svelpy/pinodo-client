@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { validateSchemaDeep } from '#lib/utils/index.ts';
-import { PRODUCTO_LIMITS, productoSchema, type ProductoInput } from './producto.schema';
+import {
+	PRODUCTO_LIMITS,
+	productoColorSchema,
+	productoDatosSchema,
+	productoSchema,
+	skuStockSchema,
+	type ProductoInput
+} from './producto.schema';
 
 const UUID = (n: number) =>
 	`${String(n).repeat(8)}-${String(n).repeat(4)}-4${String(n).repeat(3)}-8${String(n).repeat(3)}-${String(n).repeat(12)}`;
@@ -184,5 +191,57 @@ describe('productoSchema', () => {
 		const nombre = 'a'.repeat(PRODUCTO_LIMITS.NOMBRE_MAX);
 		expect(productoSchema.safeParse(valid({ nombre })).success).toBe(true);
 		expect(productoSchema.safeParse(valid({ nombre: `${nombre}a` })).success).toBe(false);
+	});
+});
+
+describe('productoDatosSchema', () => {
+	it('valida solo los datos generales (sin colores), como al editar', () => {
+		const datos = { ...valid(), colores: undefined };
+		expect(productoDatosSchema.safeParse(datos).success).toBe(true);
+		expect(productoDatosSchema.parse(datos)).not.toHaveProperty('colores');
+		expect(productoDatosSchema.safeParse({ ...datos, nombre: '' }).success).toBe(false);
+	});
+});
+
+describe('productoColorSchema', () => {
+	it('conserva el id de un SKU ya guardado', () => {
+		const result = productoColorSchema.parse(color({ skus: [sku({ id: UUID(6) })] }));
+		expect(result.skus[0].id).toBe(UUID(6));
+	});
+});
+
+describe('skuStockSchema', () => {
+	it('una entrada da un ajuste positivo y una salida uno negativo', () => {
+		expect(skuStockSchema.parse({ movimiento: 'entrada', cantidad: ' 5 ', minimo: '' })).toEqual({
+			ajuste: 5,
+			minimo: null
+		});
+		expect(skuStockSchema.parse({ movimiento: 'salida', cantidad: '3', minimo: '2' })).toEqual({
+			ajuste: -3,
+			minimo: 2
+		});
+	});
+
+	it('se puede cambiar solo el mínimo (incluso a 0)', () => {
+		expect(skuStockSchema.parse({ movimiento: 'entrada', cantidad: '', minimo: '0' })).toEqual({
+			ajuste: null,
+			minimo: 0
+		});
+	});
+
+	it('exige una cantidad o un mínimo', () => {
+		const result = skuStockSchema.safeParse({ movimiento: 'entrada', cantidad: '', minimo: '' });
+		expect(result.error?.issues[0].path).toEqual(['cantidad']);
+	});
+
+	it('rechaza cantidad 0, decimales, negativos y mínimos inválidos', () => {
+		for (const cantidad of ['0', '1.5', '-1', 'abc']) {
+			expect(
+				skuStockSchema.safeParse({ movimiento: 'entrada', cantidad, minimo: '' }).success
+			).toBe(false);
+		}
+		expect(
+			skuStockSchema.safeParse({ movimiento: 'entrada', cantidad: '1', minimo: '-1' }).success
+		).toBe(false);
 	});
 });

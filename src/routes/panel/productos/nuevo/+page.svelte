@@ -58,7 +58,7 @@
 	onMount(loadCatalogos);
 </script>
 
-<MainLayout title="Nuevo producto" noIndex class="container mx-auto max-w-5xl space-y-4">
+<MainLayout title="Nuevo producto" noIndex class="container mx-auto space-y-4">
 	<div>
 		<Button variant="ghost" size="sm" href={resolve('/panel/productos')}>
 			{#snippet leftIcon()}<ArrowLeftIcon class="size-4" />{/snippet}

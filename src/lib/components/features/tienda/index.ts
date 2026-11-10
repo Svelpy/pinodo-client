@@ -1,0 +1,13 @@
+export { default as TiendaCatalogo } from './tiendaCatalogo.svelte';
+export { default as TiendaCesta } from './tiendaCesta.svelte';
+export { default as TiendaDrawer } from './tiendaDrawer.svelte';
+export { default as TiendaFiltros } from './tiendaFiltros.svelte';
+export { default as TiendaFooter } from './tiendaFooter.svelte';
+export { default as TiendaHeader } from './tiendaHeader.svelte';
+export { default as TiendaMantenimiento } from './tiendaMantenimiento.svelte';
+export { default as TiendaMenu } from './tiendaMenu.svelte';
+export { default as TiendaPrecio } from './tiendaPrecio.svelte';
+export { default as TiendaProductoCard } from './tiendaProductoCard.svelte';
+export { default as TiendaProductoDetalle } from './tiendaProductoDetalle.svelte';
+export { default as TiendaSeo } from './tiendaSeo.svelte';
+export { default as TiendaProgreso } from './tiendaProgreso.svelte';

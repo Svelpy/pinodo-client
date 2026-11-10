@@ -5,3 +5,6 @@ export { default as ProductoListSkeleton } from './productoListSkeleton.svelte';
 export { default as SeccionListSkeleton } from './seccionListSkeleton.svelte';
 export { default as TallaListSkeleton } from './tallaListSkeleton.svelte';
 export { default as UsuarioListSkeleton } from './usuarioListSkeleton.svelte';
+export { default as VentaCatalogoSkeleton } from './ventaCatalogoSkeleton.svelte';
+export { default as VentaListSkeleton } from './ventaListSkeleton.svelte';
+export { default as VentaDetalleSkeleton } from './ventaDetalleSkeleton.svelte';

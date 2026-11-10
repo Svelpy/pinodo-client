@@ -32,3 +32,4 @@ export { default as PageHeader } from './pageHeader.svelte';
 export { default as Tabs } from './tabs.svelte';
 export { default as Sheet } from './sheet.svelte';
 export { default as StatTile } from './statTile.svelte';
+export { default as SegmentedControl } from './segmentedControl.svelte';

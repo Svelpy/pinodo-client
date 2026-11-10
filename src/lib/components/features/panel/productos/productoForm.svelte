@@ -86,6 +86,10 @@
 	);
 	const usedColorIds = $derived(values.colores.map((color) => color.color_id).filter(Boolean));
 	const canAddColor = $derived(todosColores.length > values.colores.length);
+	// Los códigos de barras no pueden repetirse entre SKUs de ningún color del producto
+	const usedBarcodes = $derived(
+		values.colores.flatMap((color) => color.skus.map((sku) => sku.codigo_barras.trim()))
+	);
 
 	// La categoría pertenece a una sección: al cambiarla se descartan las ya elegidas
 	function handleSeccionChange(seccionId: string) {
@@ -275,6 +279,7 @@
 					{tallas}
 					path="colores.{index}"
 					{errors}
+					{usedBarcodes}
 					disabled={isSaving}
 					onRemove={() => removeColor(color.key)}
 				/>
