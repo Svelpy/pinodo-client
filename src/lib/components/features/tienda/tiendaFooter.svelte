@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
+	// import { resolve } from '$app/paths';
 	import { LegalLinks } from '#lib/components/features/legal/index.ts';
 	import type { TiendaConfigPublica } from '#lib/interfaces/index.ts';
 	import { whatsappUrl } from '#lib/utils/index.ts';
@@ -123,6 +123,5 @@
 	>
 		<p>© {new Date().getFullYear()} {tienda.nombre_tienda}</p>
 		<LegalLinks class="tracking-normal normal-case" />
-		<a href={resolve('/auth/sign-in')} class="hover:underline">Acceso tienda</a>
 	</div>
 </footer>
