@@ -11,13 +11,12 @@
 		VentaCheckoutValues,
 		VentaDetalle
 	} from '#lib/interfaces/index.ts';
-	import { AppError, errorService, skuService, ventaService } from '#lib/services/index.ts';
+	import { AppError, errorService, ventaService } from '#lib/services/index.ts';
 	import {
 		agregarAlCarrito,
 		borrarBorradorVenta,
 		calcularCambio,
 		calcularTotales,
-		descontarStock,
 		formatCurrency,
 		formatRelativeTime,
 		guardarBorradorVenta,
@@ -31,7 +30,7 @@
 	import { createVentaCheckoutSchema } from '#lib/zod/index.ts';
 	import VentaBuscador from './ventaBuscador.svelte';
 	import VentaCarrito from './ventaCarrito.svelte';
-	import VentaCatalogo from './ventaCatalogo.svelte';
+	import VentaCobro from './ventaCobro.svelte';
 	import VentaExitoModal from './ventaExitoModal.svelte';
 	import VentaScannerModal, { soportaEscaneoCamara } from './ventaScannerModal.svelte';
 
@@ -48,7 +47,6 @@
 
 	let { venta = null, lineasIniciales = [], puedeVender = true, onGuardado }: Props = $props();
 
-	const PER_PAGE = 50;
 	const RESALTADO_MS = 1200;
 	const modo = $derived(venta ? 'edicion' : 'nueva');
 
@@ -85,19 +83,7 @@
 	let borradorListo = $state(false);
 	let borradorRecuperado = $state<string | null>(null);
 
-	// ── Catálogo ──────────────────────────────────────────────────────────────────────────────
-	let skus = $state<SkuInventario[]>([]);
-	let catalogoTotal = $state(0);
-	let catalogoPage = $state(1);
-	let catalogoTotalPages = $state(1);
-	let nombre = $state('');
-	let enRebaja = $state(false);
-	let catalogoLoading = $state(false);
-	let catalogoError = $state('');
-	let lastRequestId = 0;
-
 	let aviso = $state<CajaAviso | null>(null);
-	let buscandoCodigo = $state(false);
 	let buscador = $state<ReturnType<typeof VentaBuscador>>();
 	let scannerOpen = $state(false);
 	const puedeEscanear = soportaEscaneoCamara();
@@ -107,43 +93,9 @@
 	let ventaRegistrada = $state<VentaDetalle | null>(null);
 	let cambioRegistrado = $state<number | null>(null);
 
-	async function loadCatalogo(page = 1) {
-		const requestId = ++lastRequestId;
-		catalogoError = '';
-		catalogoLoading = true;
-		try {
-			const response = await skuService.inventario({
-				page,
-				per_page: PER_PAGE,
-				nombre: nombre || undefined,
-				en_rebaja: enRebaja || undefined
-			});
-			if (requestId !== lastRequestId) return;
-			skus = page > 1 ? [...skus, ...response.data] : response.data;
-			catalogoPage = response.page;
-			catalogoTotalPages = Math.max(1, response.total_pages);
-			catalogoTotal = response.total;
-			// El carrito se queda con el stock y el precio más recientes
-			lineas = sincronizarLineas(lineas, response.data);
-		} catch (error) {
-			if (requestId !== lastRequestId) return;
-			catalogoError = errorService.getMessage(error);
-		} finally {
-			if (requestId === lastRequestId) catalogoLoading = false;
-		}
-	}
-
-	function handleNombreChange(value: string) {
-		if (value === nombre) return;
-		nombre = value;
-		skus = [];
-		loadCatalogo();
-	}
-
-	function handleEnRebajaChange(value: boolean) {
-		enRebaja = value;
-		skus = [];
-		loadCatalogo();
+	// Cada búsqueda trae el stock y el precio más recientes: el carrito se queda con ellos
+	function handleResultados(skus: SkuInventario[]) {
+		lineas = sincronizarLineas(lineas, skus);
 	}
 
 	function resaltar(skuId: string) {
@@ -168,29 +120,9 @@
 		resaltar(sku.id);
 	}
 
-	async function buscarCodigo(codigo: string) {
-		buscandoCodigo = true;
-		aviso = null;
-		try {
-			const response = await skuService.inventario({ codigo_barras: codigo, per_page: 5 });
-			const [sku] = response.data;
-			if (sku) {
-				agregar(sku);
-				lineas = sincronizarLineas(lineas, response.data);
-			} else {
-				aviso = { tipo: 'error', texto: `Ningún producto activo tiene el código ${codigo}.` };
-			}
-		} catch (error) {
-			aviso = { tipo: 'error', texto: errorService.getMessage(error) };
-		} finally {
-			buscandoCodigo = false;
-			buscador?.focus();
-		}
-	}
-
 	function handleScan(codigo: string) {
 		scannerOpen = false;
-		buscarCodigo(codigo);
+		buscador?.buscarCodigo(codigo);
 	}
 
 	function setCantidad(skuId: string, cantidad: number) {
@@ -256,12 +188,13 @@
 					estado: cobrar ? VENTA_ESTADO.CONFIRMADA : VENTA_ESTADO.PENDIENTE,
 					items
 				});
-				if (cobrar) skus = descontarStock(skus, items);
 				borrarBorradorVenta();
 				reset();
 				carritoAbierto = false;
 				cambioRegistrado = cambio;
 				ventaRegistrada = creada;
+				// Lo que muestra la búsqueda abierta pasa a tener el stock ya descontado
+				if (cobrar) buscador?.refrescar();
 				return;
 			}
 
@@ -286,8 +219,8 @@
 			submitError = guardadoSinCobrar
 				? `Los cambios se guardaron, pero no se pudo cobrar: ${message}`
 				: message;
-			// Sin stock suficiente: se refresca para mostrar lo disponible
-			if (error instanceof AppError && error.status === 409) loadCatalogo();
+			// Sin stock suficiente: se refresca la búsqueda para mostrar lo disponible
+			if (error instanceof AppError && error.status === 409) buscador?.refrescar();
 		} finally {
 			submitting = null;
 		}
@@ -340,14 +273,13 @@
 			}
 			borradorListo = true;
 		}
-		loadCatalogo();
 	});
 
 	onDestroy(() => clearTimeout(resaltadoTimer));
 </script>
 
-{#snippet carrito()}
-	<VentaCarrito
+{#snippet cobro()}
+	<VentaCobro
 		{lineas}
 		bind:checkout
 		bind:pagaCon
@@ -358,11 +290,6 @@
 		{submitError}
 		{submitting}
 		puedeCobrar={puedeVender}
-		{resaltada}
-		onCantidadChange={setCantidad}
-		onDescuentoChange={setDescuento}
-		onRemove={quitar}
-		onVaciar={venta ? undefined : vaciar}
 		onSubmit={submit}
 	/>
 {/snippet}
@@ -388,49 +315,47 @@
 
 		<VentaBuscador
 			bind:this={buscador}
-			{nombre}
-			{enRebaja}
+			{enCarrito}
 			{aviso}
-			{buscandoCodigo}
-			onNombreChange={handleNombreChange}
-			onCodigo={buscarCodigo}
-			onEnRebajaChange={handleEnRebajaChange}
+			disabled={!puedeVender || submitting !== null}
+			onAgregar={agregar}
+			onResultados={handleResultados}
+			onAviso={(value) => (aviso = value)}
 			onScan={puedeEscanear ? () => (scannerOpen = true) : undefined}
 		/>
 
-		<VentaCatalogo
-			{skus}
-			total={catalogoTotal}
-			{enCarrito}
-			busqueda={nombre}
-			isLoading={catalogoLoading}
-			error={catalogoError}
-			hasMore={catalogoPage < catalogoTotalPages}
-			onLoadMore={() => loadCatalogo(catalogoPage + 1)}
-			onRetry={() => loadCatalogo()}
-			onAdd={agregar}
-			disabled={!puedeVender || submitting !== null}
+		<VentaCarrito
+			{lineas}
+			{modo}
+			{recalcular}
+			{resaltada}
+			disabled={submitting !== null}
+			onCantidadChange={setCantidad}
+			onDescuentoChange={setDescuento}
+			onRemove={quitar}
+			onVaciar={venta ? undefined : vaciar}
 		/>
 	</div>
 
-	<!-- Escritorio: el carrito queda fijo a la derecha mientras se recorre el catálogo -->
+	<!-- Escritorio: los datos del cobro quedan fijos a la derecha mientras se arma el carrito -->
 	<aside
-		aria-label="Carrito"
+		aria-label="Cobro"
 		class="sticky top-20 hidden max-h-[calc(100dvh-7.5rem)] flex-col border border-light-one_d bg-light-one lg:flex dark:border-dark-one_d dark:bg-dark-one"
 	>
-		{@render carrito()}
+		{@render cobro()}
 	</aside>
 </div>
 
-<!-- Móvil y tablet: barra inferior con el resumen; el carrito se abre en una hoja -->
+<!-- Móvil y tablet: barra inferior con el total; el cobro se abre en una hoja -->
 <div
 	class="fixed inset-x-0 bottom-0 z-20 border-t border-light-one_d bg-light-one px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden dark:border-dark-one_d dark:bg-dark-one"
 >
 	<button
 		type="button"
 		onclick={() => (carritoAbierto = true)}
-		class="flex h-12 w-full items-center justify-between gap-3 bg-light-three px-4 text-light-one transition-colors active:bg-light-three_d dark:bg-dark-three dark:text-dark-one"
-		aria-label="Ver carrito: {totales.unidades} {totales.unidades === 1
+		disabled={lineas.length === 0}
+		class="flex h-12 w-full items-center justify-between gap-3 bg-light-three px-4 text-light-one transition-colors active:bg-light-three_d disabled:opacity-50 dark:bg-dark-three dark:text-dark-one"
+		aria-label="Continuar al cobro: {totales.unidades} {totales.unidades === 1
 			? 'prenda'
 			: 'prendas'}, total {formatCurrency(totales.total)}"
 	>
@@ -445,7 +370,7 @@
 					</span>
 				{/if}
 			</span>
-			<span class="ml-1">{venta ? 'Ver pedido' : 'Ver carrito'}</span>
+			<span class="ml-1">Continuar al cobro</span>
 		</span>
 		<span class="text-lg font-bold tabular-nums">{formatCurrency(totales.total)}</span>
 	</button>
@@ -453,7 +378,7 @@
 
 <Sheet
 	open={carritoAbierto}
-	title={venta ? 'Pedido' : 'Carrito'}
+	title={venta ? 'Cobro del pedido' : 'Cobro'}
 	hideTitle
 	onClose={() => {
 		if (!submitting) carritoAbierto = false;
@@ -462,7 +387,7 @@
 >
 	{#if carritoAbierto}
 		<div class="-mx-5 -mt-3 -mb-5 md:-mx-6">
-			{@render carrito()}
+			{@render cobro()}
 		</div>
 	{/if}
 </Sheet>

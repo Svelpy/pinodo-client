@@ -6,3 +6,5 @@ export * from './seccion.schema';
 export * from './talla.schema';
 export * from './usuario.schema';
 export * from './venta.schema';
+export * from './tienda.schema';
+export * from './perfil.schema';

@@ -48,15 +48,16 @@
 
 	<!-- Tablet y escritorio: tabla (mismas columnas que ProductoTable) -->
 	<div class="hidden overflow-x-auto md:block" aria-hidden="true">
-		<Table class="table-fixed text-sm">
+		<Table class="table-fixed text-sm lg:min-w-[60rem] xl:min-w-[75rem]">
 			<TableHeader>
 				<TableRow class="border-light-one_d hover:bg-transparent dark:border-dark-one_d">
-					<TableHead class="{headClass} w-[34%]">Producto</TableHead>
-					<TableHead class={headClass}>Colores</TableHead>
-					<TableHead class="{headClass} hidden lg:table-cell">Precio</TableHead>
+					<TableHead class={headClass}>Producto</TableHead>
+					<TableHead class="{headClass} w-32">Colores</TableHead>
+					<TableHead class="{headClass} hidden w-52 lg:table-cell">Precio</TableHead>
 					<TableHead class="{headClass} hidden w-28 lg:table-cell">Stock</TableHead>
-					<TableHead class={headClass}>Visibilidad</TableHead>
+					<TableHead class="{headClass} w-40">Visibilidad</TableHead>
 					<TableHead class="{headClass} hidden w-36 xl:table-cell">Creado</TableHead>
+					<TableHead class="{headClass} hidden w-40 xl:table-cell">Actualizado</TableHead>
 					<TableHead class="h-11 w-14 px-2">
 						<span class="sr-only">Acciones</span>
 					</TableHead>
@@ -90,6 +91,9 @@
 						</TableCell>
 						<TableCell class="hidden px-4 py-3 xl:table-cell">
 							<div class={['h-3.5 w-24', block]}></div>
+						</TableCell>
+						<TableCell class="hidden px-4 py-3 xl:table-cell">
+							<div class={['h-3.5 w-20', block]}></div>
 						</TableCell>
 						<TableCell class="px-2 py-3">
 							<div class={['ml-auto size-9', block]}></div>

@@ -10,6 +10,7 @@
 		TiendaDrawer,
 		TiendaFooter,
 		TiendaHeader,
+		TiendaLogo,
 		TiendaMantenimiento,
 		TiendaMenu,
 		TiendaProgreso
@@ -49,6 +50,7 @@
 </script>
 
 <svelte:head>
+	<meta name="apple-mobile-web-app-title" content={data.tienda.nombre_tienda} />
 	{#if data.tienda.favicon_url}
 		<link rel="icon" href={data.tienda.favicon_url} />
 	{/if}
@@ -83,7 +85,8 @@
 					class="hidden w-60 shrink-0 overflow-hidden pr-8 lg:block"
 					transition:slide={{ axis: 'x', duration: duracion(300), easing: cubicOut }}
 				>
-					<div class="sticky top-32 max-h-[calc(100dvh-9rem)] overflow-y-auto pb-10">
+					<div class="sticky top-0 max-h-[calc(100dvh-9rem)] overflow-y-auto pb-10">
+						<TiendaLogo tienda={data.tienda} class="mb-10" />
 						<TiendaMenu
 							navegacion={data.navegacion}
 							{seccionActiva}
@@ -108,6 +111,7 @@
 	</div>
 
 	<TiendaDrawer open={menuMovil} onClose={() => (menuMovil = false)} title="Menú" side="left">
+		<TiendaLogo tienda={data.tienda} class="mb-8" onNavigate={() => (menuMovil = false)} />
 		{#if data.navegacion.length > 0}
 			<TiendaMenu
 				navegacion={data.navegacion}

@@ -11,3 +11,5 @@ export { default as TiendaProductoCard } from './tiendaProductoCard.svelte';
 export { default as TiendaProductoDetalle } from './tiendaProductoDetalle.svelte';
 export { default as TiendaSeo } from './tiendaSeo.svelte';
 export { default as TiendaProgreso } from './tiendaProgreso.svelte';
+export { default as TiendaLogo } from './tiendaLogo.svelte';
+export { default as TiendaBuscador } from './tiendaBuscador.svelte';

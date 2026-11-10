@@ -3,6 +3,7 @@
 	import { LegalLinks } from '#lib/components/features/legal/index.ts';
 	import type { TiendaConfigPublica } from '#lib/interfaces/index.ts';
 	import { whatsappUrl } from '#lib/utils/index.ts';
+	import TiendaLogo from './tiendaLogo.svelte';
 
 	interface Props {
 		tienda: TiendaConfigPublica;
@@ -25,6 +26,22 @@
 	id="contacto"
 	class="mt-24 border-t border-light-two/15 px-4 pt-12 pb-10 text-editorial md:px-10 xl:px-12 dark:border-dark-two/15"
 >
+	<!-- Marca: el único lugar con logo visible en todas las páginas y tamaños -->
+	<div class="mb-12 flex flex-col items-start gap-4">
+		{#if tienda.logo_url}
+			<TiendaLogo {tienda} class="max-h-24 max-w-56" />
+		{:else}
+			<p class="font-editorial text-lg font-light tracking-[0.2em] uppercase">
+				{tienda.nombre_tienda}
+			</p>
+		{/if}
+		{#if tienda.descripcion}
+			<p class="max-w-md text-sm tracking-normal text-light-two_d normal-case dark:text-dark-two_d">
+				{tienda.descripcion}
+			</p>
+		{/if}
+	</div>
+
 	<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
 		<section aria-labelledby="footer-contacto">
 			<h2 id="footer-contacto" class="mb-4 font-semibold">Contacto</h2>

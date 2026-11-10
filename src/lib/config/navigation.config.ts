@@ -42,10 +42,10 @@ export const PANEL_NAVIGATION: NavSection[] = [
 			navItem({
 				id: 'venta',
 				label: 'Ventas',
-				route: '/panel/venta',
+				route: '/panel/ventas',
 				icon: ShoppingCartIcon,
 				children: [
-					{ id: 'historial-ventas', label: 'Historial de ventas', route: '/panel/historial-ventas' }
+					{ id: 'historial-ventas', label: 'Historial de ventas', route: '/panel/ventas/historial' }
 				]
 			}),
 			navItem({
@@ -54,9 +54,9 @@ export const PANEL_NAVIGATION: NavSection[] = [
 				route: '/panel/productos',
 				icon: PackageIcon,
 				children: [
-					{ id: 'categorias', label: 'Categorías', route: '/panel/categorias' },
-					{ id: 'colores', label: 'Colores', route: '/panel/colores' },
-					{ id: 'tallas', label: 'Tallas', route: '/panel/tallas' }
+					{ id: 'categorias', label: 'Categorías', route: '/panel/productos/categorias' },
+					{ id: 'colores', label: 'Colores', route: '/panel/productos/colores' },
+					{ id: 'tallas', label: 'Tallas', route: '/panel/productos/tallas' }
 				]
 			}),
 			navItem({

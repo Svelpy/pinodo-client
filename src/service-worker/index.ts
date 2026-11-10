@@ -76,14 +76,13 @@ function offlinePage(): Response {
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-	<meta name="theme-color" content="#051831" />
-	<title>Sin conexión · TUPA CLUB</title>
+	<meta name="theme-color" content="#ffffff" />
+	<title>Sin conexión</title>
 	<style>
-		body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #051831; color: #fff; font-family: system-ui, sans-serif; text-align: center; }
-		img { border-radius: 24px; }
-		h1 { margin: 24px 0 8px; font-size: 1.5rem; }
+		body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #fff; color: #0f1f38; font-family: system-ui, sans-serif; text-align: center; }
+		h1 { margin: 24px 0 8px; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.12em; }
 		p { margin: 0 0 24px; opacity: 0.8; }
-		button { font: inherit; font-weight: 600; padding: 12px 24px; border: 0; border-radius: 12px; background: #fff; color: #051831; cursor: pointer; }
+		button { font: inherit; font-weight: 600; padding: 12px 24px; border: 1px solid currentColor; background: #0f1f38; color: #fff; cursor: pointer; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; }
 	</style>
 </head>
 <body>

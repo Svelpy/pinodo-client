@@ -34,7 +34,7 @@
 				id: 'ver',
 				label: 'Ver detalle',
 				icon: EyeIcon,
-				action: () => goto(resolve('/panel/historial-ventas/[id]', { id: venta.id }))
+				action: () => goto(resolve('/panel/ventas/historial/[id]', { id: venta.id }))
 			},
 			acciones.cobrar &&
 				onCobrar && {
@@ -47,7 +47,7 @@
 				id: 'editar',
 				label: 'Editar pedido',
 				icon: PencilIcon,
-				action: () => goto(resolve('/panel/venta/[id]', { id: venta.id }))
+				action: () => goto(resolve('/panel/ventas/historial/[id]/editar', { id: venta.id }))
 			},
 			acciones.cancelar &&
 				onCancelar && {

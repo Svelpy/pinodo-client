@@ -329,20 +329,44 @@ export function agruparInventario(skus: readonly SkuInventario[]): InventarioPro
 	return [...productos.values()];
 }
 
-/** Resta del stock mostrado lo que se acaba de cobrar */
-export function descontarStock(
-	skus: readonly SkuInventario[],
-	vendidos: readonly { sku_id: string; cantidad: number }[]
-): SkuInventario[] {
-	const porSku = new Map<string, number>();
-	for (const { sku_id, cantidad } of vendidos) {
-		porSku.set(sku_id, (porSku.get(sku_id) ?? 0) + cantidad);
-	}
-	return skus.map((sku) => {
-		const vendido = porSku.get(sku.id);
-		if (!vendido) return sku;
-		return { ...sku, stock: { ...sku.stock, cantidad: Math.max(0, sku.stock.cantidad - vendido) } };
-	});
+// ── Búsqueda en la caja ───────────────────────────────────────────────────────────────────────
+
+/** Pausa al escribir antes de buscar. Un lector USB escribe el código entero en mucho menos */
+export const BUSQUEDA_DEBOUNCE_MS = 300;
+/** Caracteres mínimos para buscar por nombre */
+export const BUSQUEDA_MIN_CHARS = 2;
+
+// Un lector de códigos escribe un código sin espacios (EAN-13, UPC, o uno interno con letras)
+const CODIGO_BARRAS_REGEX = /^[0-9A-Za-z\-.]{6,50}$/;
+
+/** El texto parece un código de barras (sin espacios y con dígitos) y no un nombre */
+export function esCodigoBarras(texto: string): boolean {
+	const value = texto.trim();
+	return CODIGO_BARRAS_REGEX.test(value) && /\d/.test(value);
+}
+
+export interface EstadoStockSku {
+	/** Unidades que aún se pueden agregar (stock menos lo que ya está en el carrito) */
+	restantes: number;
+	texto: string;
+	/** No se puede agregar más */
+	agotado: boolean;
+	/** Stock en o bajo el mínimo */
+	bajo: boolean;
+}
+
+/** Disponibilidad de un SKU descontando lo que ya está en el carrito */
+export function estadoStockSku(sku: SkuInventario, enCarrito = 0): EstadoStockSku {
+	const cantidad = sku.stock.cantidad;
+	const restantes = Math.max(0, cantidad - enCarrito);
+	if (cantidad <= 0) return { restantes: 0, texto: 'Agotado', agotado: true, bajo: false };
+	if (restantes === 0) return { restantes, texto: 'Todo en carrito', agotado: true, bajo: false };
+	return {
+		restantes,
+		texto: `${restantes} disp.`,
+		agotado: false,
+		bajo: cantidad <= sku.stock.minimo
+	};
 }
 
 // ── WhatsApp ──────────────────────────────────────────────────────────────────────────────────

@@ -27,7 +27,7 @@
 			class="mb-12 h-12 w-auto max-w-[70vw] object-contain"
 		/>
 	{:else}
-		<p class="mb-12 text-2xl font-light tracking-[0.4em] uppercase md:text-4xl">
+		<p class="mb-12 font-editorial text-2xl font-light tracking-[0.2em] uppercase md:text-4xl">
 			{tienda.nombre_tienda}
 		</p>
 	{/if}

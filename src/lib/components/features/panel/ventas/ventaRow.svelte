@@ -25,7 +25,7 @@
 
 	let { venta, vendedor, mostrarVendedor = false, onCobrar, onCancelar }: Props = $props();
 
-	const href = $derived(resolve('/panel/historial-ventas/[id]', { id: venta.id }));
+	const href = $derived(resolve('/panel/ventas/historial/[id]', { id: venta.id }));
 	const cancelada = $derived(venta.estado === VENTA_ESTADO.CANCELADA);
 
 	// La fila entera abre el detalle; el número es el enlace accesible

@@ -28,6 +28,7 @@ describe('isSignInReason', () => {
 	it('acepta solo motivos conocidos', () => {
 		expect(isSignInReason('expired')).toBe(true);
 		expect(isSignInReason('required')).toBe(true);
+		expect(isSignInReason('password')).toBe(true);
 		expect(isSignInReason('otro')).toBe(false);
 		expect(isSignInReason(null)).toBe(false);
 	});

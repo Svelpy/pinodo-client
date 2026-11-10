@@ -80,7 +80,7 @@
 			</Button>
 			<Button
 				variant="ghost"
-				href={resolve('/panel/historial-ventas/[id]', { id: venta.id })}
+				href={resolve('/panel/ventas/historial/[id]', { id: venta.id })}
 				class="sm:col-span-2"
 			>
 				{#snippet leftIcon()}<FileDescriptionIcon class="size-4" />{/snippet}

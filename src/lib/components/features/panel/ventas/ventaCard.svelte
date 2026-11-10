@@ -26,7 +26,7 @@
 		<div class="flex items-center gap-2">
 			<!-- El enlace cubre la tarjeta (::after); las acciones quedan por encima -->
 			<a
-				href={resolve('/panel/historial-ventas/[id]', { id: venta.id })}
+				href={resolve('/panel/ventas/historial/[id]', { id: venta.id })}
 				class="font-semibold text-light-two tabular-nums after:absolute after:inset-0 dark:text-dark-two"
 			>
 				{formatVentaNumero(venta.numero)}

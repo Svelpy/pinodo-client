@@ -9,7 +9,8 @@ import {
 	calcularCambio,
 	calcularLinea,
 	calcularTotales,
-	descontarStock,
+	esCodigoBarras,
+	estadoStockSku,
 	hayPreciosDistintos,
 	lineasDesdeVenta,
 	mensajeWhatsappVenta,
@@ -232,18 +233,6 @@ describe('inventario', () => {
 		expect(grupos.map((g) => g.producto_nombre)).toEqual(['Camisa Oxford', 'Pantalón']);
 		expect(grupos[0].colores.map((c) => c.skus.map((s) => s.id))).toEqual([['a', 'b'], ['c']]);
 	});
-
-	it('descontarStock resta lo vendido sin bajar de 0', () => {
-		const [a, b] = descontarStock(
-			[sku(), sku({ id: 's2' })],
-			[
-				{ sku_id: 's1', cantidad: 2 },
-				{ sku_id: 's1', cantidad: 5 }
-			]
-		);
-		expect(a.stock.cantidad).toBe(0);
-		expect(b.stock.cantidad).toBe(3);
-	});
 });
 
 describe('whatsapp', () => {
@@ -324,5 +313,50 @@ describe('fechas y permisos', () => {
 			cancelar: false
 		});
 		expect(accionesVenta({ estado: 'PENDIENTE' }, 'SUPERADMIN').cobrar).toBe(false);
+	});
+});
+
+describe('esCodigoBarras', () => {
+	it('reconoce códigos sin espacios y con dígitos', () => {
+		expect(esCodigoBarras('8412345678905')).toBe(true);
+		expect(esCodigoBarras(' 8412345678905 ')).toBe(true);
+		expect(esCodigoBarras('ABC-1234')).toBe(true);
+	});
+
+	it('un nombre, un texto corto o sin dígitos no es un código', () => {
+		expect(esCodigoBarras('camisa oxford')).toBe(false);
+		expect(esCodigoBarras('camisa')).toBe(false);
+		expect(esCodigoBarras('12345')).toBe(false);
+		expect(esCodigoBarras('polo 2024')).toBe(false);
+		expect(esCodigoBarras('1'.repeat(51))).toBe(false);
+	});
+});
+
+describe('estadoStockSku', () => {
+	it('descuenta lo que ya está en el carrito', () => {
+		expect(estadoStockSku(sku({ stock: { cantidad: 5, minimo: 1, actualizado: '' } }), 2)).toEqual({
+			restantes: 3,
+			texto: '3 disp.',
+			agotado: false,
+			bajo: false
+		});
+	});
+
+	it('agotado o todo en el carrito no se puede agregar', () => {
+		expect(
+			estadoStockSku(sku({ stock: { cantidad: 0, minimo: 0, actualizado: '' } }))
+		).toMatchObject({
+			texto: 'Agotado',
+			agotado: true
+		});
+		expect(estadoStockSku(sku(), 3)).toMatchObject({ texto: 'Todo en carrito', agotado: true });
+	});
+
+	it('marca el stock bajo el mínimo', () => {
+		expect(
+			estadoStockSku(sku({ stock: { cantidad: 2, minimo: 2, actualizado: '' } }))
+		).toMatchObject({
+			bajo: true
+		});
 	});
 });

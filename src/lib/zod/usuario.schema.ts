@@ -35,8 +35,8 @@ const optionalText = (min: number, max: number, label: string) =>
 		})
 		.transform((value) => value || null);
 
-// Sin trim: los espacios de una contraseña son intencionales
-const passwordField = (requiredMessage: string) =>
+/** Contraseña con los límites de la API. Sin trim: los espacios de una contraseña son intencionales */
+export const usuarioPasswordField = (requiredMessage: string) =>
 	z
 		.string()
 		.nonempty({ message: requiredMessage })
@@ -71,14 +71,14 @@ const baseUsuarioFields = {
 
 export const createUsuarioSchema = z.object({
 	...baseUsuarioFields,
-	password: passwordField('La contraseña es requerida')
+	password: usuarioPasswordField('La contraseña es requerida')
 });
 
 export const updateUsuarioSchema = z.object(baseUsuarioFields);
 
 export const resetUsuarioPasswordSchema = z
 	.object({
-		new_password: passwordField('La nueva contraseña es requerida'),
+		new_password: usuarioPasswordField('La nueva contraseña es requerida'),
 		confirm_password: z.string().nonempty({ message: 'Confirma la nueva contraseña' })
 	})
 	.refine((value) => value.new_password === value.confirm_password, {

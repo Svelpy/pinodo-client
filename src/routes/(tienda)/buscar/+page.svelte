@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { TiendaCatalogo, TiendaSeo } from '#lib/components/features/tienda/index.ts';
+	import {
+		TiendaBuscador,
+		TiendaCatalogo,
+		TiendaSeo
+	} from '#lib/components/features/tienda/index.ts';
 
 	let { data } = $props();
 </script>
@@ -11,21 +14,16 @@
 	noIndex
 />
 
-<form method="GET" action={resolve('/(tienda)/buscar')} role="search" class="mb-12 max-w-2xl">
-	<label for="buscar-q" class="mb-2 block text-editorial text-light-two_d dark:text-dark-two_d">
-		¿Qué estás buscando?
-	</label>
-	<input
-		id="buscar-q"
-		name="q"
-		type="search"
-		value={data.q}
-		maxlength="100"
-		placeholder="Vestido, jean, camisa…"
-		autocomplete="off"
-		class="w-full border-0 border-b border-current bg-transparent px-0 pb-2 text-xl font-light tracking-[0.12em] uppercase placeholder:tracking-normal placeholder:text-light-four placeholder:normal-case focus:ring-0 md:text-3xl dark:placeholder:text-dark-four_d"
-	/>
-</form>
+<!-- Busca solo al dejar de escribir (ver TiendaBuscador) -->
+<TiendaBuscador
+	id="buscar-q"
+	label="¿Qué estás buscando?"
+	labelVisible
+	placeholder="Vestido, jean, camisa…"
+	class="mb-12 max-w-2xl"
+	labelClass="mb-2 block text-editorial text-light-two_d dark:text-dark-two_d"
+	inputClass="w-full border-0 border-b border-current bg-transparent px-0 pb-2 font-editorial text-xl font-light tracking-[0.04em] uppercase placeholder:tracking-normal placeholder:text-light-four placeholder:normal-case focus:ring-0 md:text-3xl dark:placeholder:text-dark-four_d"
+/>
 
 {#if data.catalogo}
 	<TiendaCatalogo

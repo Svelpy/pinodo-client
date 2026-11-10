@@ -2,10 +2,17 @@
 	import { resolve } from '$app/paths';
 	import { Badge, TableCell, TableRow } from '#lib/components/ui/index.ts';
 	import type { Producto } from '#lib/interfaces/index.ts';
-	import { formatBoolean, formatDate, formatNumber, formatPriceRange } from '#lib/utils/index.ts';
+	import {
+		formatBoolean,
+		formatDate,
+		formatDateTime,
+		formatNumber,
+		formatRelativeTime
+	} from '#lib/utils/index.ts';
 	import ProductoActions from './productoActions.svelte';
 	import ProductoColores from './productoColores.svelte';
 	import ProductoPortada from './productoPortada.svelte';
+	import ProductoPrecio from './productoPrecio.svelte';
 
 	interface Props {
 		producto: Producto;
@@ -27,11 +34,11 @@
 			<div class="min-w-0">
 				<a
 					href={resolve('/panel/productos/[id]', { id: producto.id })}
-					class="block truncate font-medium text-light-two hover:underline dark:text-dark-two"
+					class="block font-medium break-words text-light-two hover:underline dark:text-dark-two"
 				>
 					{producto.nombre}
 				</a>
-				<p class="truncate text-xs text-light-two_d dark:text-dark-two_d">
+				<p class="text-xs break-words text-light-two_d dark:text-dark-two_d">
 					{producto.seccion.nombre}
 				</p>
 			</div>
@@ -40,10 +47,8 @@
 	<TableCell class="px-4 py-3">
 		<ProductoColores colores={producto.resumen.colores} />
 	</TableCell>
-	<TableCell
-		class="hidden px-4 py-3 text-sm whitespace-nowrap text-light-two lg:table-cell dark:text-dark-two"
-	>
-		{formatPriceRange(producto.resumen.precio_desde, producto.resumen.precio_hasta)}
+	<TableCell class="hidden px-4 py-3 lg:table-cell">
+		<ProductoPrecio resumen={producto.resumen} />
 	</TableCell>
 	<TableCell class="hidden px-4 py-3 text-sm lg:table-cell">
 		{#if sinStock}
@@ -63,6 +68,13 @@
 		class="hidden px-4 py-3 text-sm whitespace-nowrap text-light-two_d xl:table-cell dark:text-dark-two_d"
 	>
 		{formatDate(producto.created_at)}
+	</TableCell>
+	<TableCell
+		class="hidden px-4 py-3 text-sm whitespace-nowrap text-light-two_d xl:table-cell dark:text-dark-two_d"
+	>
+		<span title={formatDateTime(producto.updated_at)}>
+			{formatRelativeTime(producto.updated_at)}
+		</span>
 	</TableCell>
 	<TableCell class="px-2 py-3 text-right">
 		<ProductoActions {producto} {onToggleVisible} {onDelete} />

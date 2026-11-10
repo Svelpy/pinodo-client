@@ -1,11 +1,32 @@
 import { apiPinodo } from '#lib/config/index.ts';
 import { TIENDA_DATA_KEY } from '#lib/constants/index.ts';
-import type { Tienda } from '#lib/interfaces/index.ts';
+import type { Tienda, UpdateTiendaRequest } from '#lib/interfaces/index.ts';
+
+/**
+ * Multipart del PATCH: `null` viaja como texto vacío (la API lo borra), los objetos como texto JSON
+ * y los booleanos como `true`/`false`. Lo que no viene en `data` no se envía y no cambia.
+ */
+export function toTiendaFormData(data: UpdateTiendaRequest): FormData {
+	const body = new FormData();
+	for (const [key, value] of Object.entries(data)) {
+		if (value === undefined) continue;
+		if (value instanceof File) body.append(key, value);
+		else if (value === null) body.append(key, '');
+		else if (typeof value === 'object') body.append(key, JSON.stringify(value));
+		else body.append(key, String(value));
+	}
+	return body;
+}
 
 /** Configuración de la tienda: se pide a la API y se guarda en localStorage para no repetir la petición */
 class TiendaService {
 	async get(): Promise<Tienda> {
 		return apiPinodo.get<Tienda>('/config/');
+	}
+
+	/** Edita la configuración ("Mi negocio"); responde la configuración completa */
+	async update(data: UpdateTiendaRequest): Promise<Tienda> {
+		return apiPinodo.patch<Tienda>('/config/', toTiendaFormData(data), { requireAuth: true });
 	}
 
 	getCached(): Tienda | null {

@@ -109,7 +109,10 @@
 				>Iniciar sesión</Heading
 			>
 			{#if reason && !formError}
-				<AlertBox variant="warning" class="mt-6">{SIGN_IN_REASON_MESSAGES[reason]}</AlertBox>
+				<!-- Cambiar la contraseña no es un problema: se informa, no se advierte -->
+				<AlertBox variant={reason === 'password' ? 'info' : 'warning'} class="mt-6">
+					{SIGN_IN_REASON_MESSAGES[reason]}
+				</AlertBox>
 			{/if}
 			{#if formError}
 				<div

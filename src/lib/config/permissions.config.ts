@@ -97,9 +97,9 @@ export const ROLE_PERMISSIONS: Record<Role, ModulePermissions> = {
 		[Module.VENTA]: SOLO_LECTURA,
 		[Module.NEGOCIO]: SOLO_LECTURA
 	}),
-	// Solo el OWNER edita los datos de su negocio
+	// OWNER y ADMIN editan los datos del negocio (no lo crean ni eliminan: es una sola fila)
 	[Role.OWNER]: fullAccess({ [Module.NEGOCIO]: [Action.READ, Action.UPDATE] }),
-	[Role.ADMIN]: fullAccess({ [Module.NEGOCIO]: SOLO_LECTURA }),
+	[Role.ADMIN]: fullAccess({ [Module.NEGOCIO]: [Action.READ, Action.UPDATE] }),
 	[Role.CAJERO]: {
 		[Module.VENTA]: [Action.CREATE, Action.READ],
 		// Lectura de lo que necesita para vender

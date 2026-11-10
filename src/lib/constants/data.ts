@@ -35,9 +35,9 @@ export const USER_GENERO_LABEL: Record<'M' | 'F' | 'O', string> = {
 
 /** Páginas legales públicas: se enlazan desde la landing, el login, el registro y entre sí */
 export const LEGAL_PAGES = [
-	{ href: '/(legal)/terminos', label: 'Términos y condiciones' },
-	{ href: '/(legal)/privacidad', label: 'Política de privacidad' },
-	{ href: '/(legal)/cookies', label: 'Política de cookies' }
+	{ href: '/(tienda)/(legal)/terminos', label: 'Términos y condiciones' },
+	{ href: '/(tienda)/(legal)/privacidad', label: 'Política de privacidad' },
+	{ href: '/(tienda)/(legal)/cookies', label: 'Política de cookies' }
 ] as const;
 
 /**
@@ -131,3 +131,36 @@ export const RANGO_FECHA_LABEL: Record<RangoFecha, string> = {
 	TODO: 'Todas las fechas',
 	PERSONALIZADO: 'Personalizado'
 };
+
+/** Días de la semana en su forma canónica (las claves del `horario` de la tienda), de lunes a domingo */
+export const DIAS_SEMANA = [
+	'lunes',
+	'martes',
+	'miércoles',
+	'jueves',
+	'viernes',
+	'sábado',
+	'domingo'
+] as const;
+export type DiaSemana = (typeof DIAS_SEMANA)[number];
+
+export const DIA_SEMANA_LABEL: Record<DiaSemana, string> = {
+	lunes: 'Lunes',
+	martes: 'Martes',
+	miércoles: 'Miércoles',
+	jueves: 'Jueves',
+	viernes: 'Viernes',
+	sábado: 'Sábado',
+	domingo: 'Domingo'
+};
+
+/** Redes que se sugieren al escribir el nombre de una red social (la API acepta cualquier otra) */
+export const REDES_SOCIALES_SUGERIDAS = [
+	'instagram',
+	'facebook',
+	'tiktok',
+	'youtube',
+	'x',
+	'linkedin',
+	'pinterest'
+] as const;

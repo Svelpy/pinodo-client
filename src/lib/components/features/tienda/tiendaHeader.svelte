@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import { SearchIcon } from '#lib/icons/outline/index.ts';
 	import type { TiendaConfigPublica } from '#lib/interfaces/index.ts';
 	import { duracion } from '#lib/utils/index.ts';
+	import TiendaBuscador from './tiendaBuscador.svelte';
 
 	interface Props {
 		tienda: TiendaConfigPublica;
@@ -15,9 +15,6 @@
 	}
 
 	let { tienda, cantidad, menuAbierto, onMenu, onCesta }: Props = $props();
-
-	const enBusqueda = $derived(page.route.id === '/(tienda)/buscar');
-	const q = $derived(enBusqueda ? (page.url.searchParams.get('q') ?? '') : '');
 </script>
 
 <header
@@ -47,40 +44,22 @@
 			class="flex items-center justify-center"
 			aria-label="{tienda.nombre_tienda}, inicio"
 		>
-			{#if tienda.logo_url}
-				<img
-					src={tienda.logo_url}
-					alt={tienda.nombre_tienda}
-					class="h-8 w-auto max-w-[44vw] object-contain md:h-11"
-				/>
-			{:else}
-				<span
-					class="block truncate text-base font-light tracking-[0.25em] uppercase sm:text-lg sm:tracking-[0.35em] md:text-3xl md:tracking-[0.4em]"
-				>
-					{tienda.nombre_tienda}
-				</span>
-			{/if}
+			<!-- Siempre el nombre en texto: el logo puede traer el nombre y se muestra aparte (TiendaLogo) -->
+			<span
+				class="block max-w-[52vw] truncate font-editorial text-base font-light tracking-[0.12em] uppercase sm:text-lg sm:tracking-[0.18em] md:max-w-[40vw] md:text-3xl md:tracking-[0.22em]"
+			>
+				{tienda.nombre_tienda}
+			</span>
 		</a>
 
 		<div class="flex items-center justify-end gap-3 text-editorial sm:gap-5 md:gap-8">
-			<form
-				method="GET"
-				action={resolve('/(tienda)/buscar')}
-				role="search"
+			<TiendaBuscador
+				id="tienda-buscar"
+				label="Buscar productos"
+				placeholder="BUSCAR"
 				class="hidden w-48 border-b border-current md:block xl:w-56"
-			>
-				<label class="sr-only" for="tienda-buscar">Buscar productos</label>
-				<input
-					id="tienda-buscar"
-					name="q"
-					type="search"
-					value={q}
-					maxlength="100"
-					placeholder="BUSCAR"
-					autocomplete="off"
-					class="w-full border-0 bg-transparent px-0 pt-0 pb-1 text-right text-editorial placeholder:text-current focus:ring-0 focus:outline-none"
-				/>
-			</form>
+				inputClass="w-full border-0 bg-transparent px-0 pt-0 pb-1 text-right text-editorial placeholder:text-current focus:ring-0 focus:outline-none"
+			/>
 			<a href={resolve('/(tienda)/buscar')} class="p-1 md:hidden" aria-label="Buscar">
 				<SearchIcon class="size-5 stroke-[1.25]" />
 			</a>

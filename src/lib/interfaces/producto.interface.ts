@@ -17,6 +17,11 @@ export interface ProductoResumen {
 	/** Rango de precios vigentes hoy; null si el producto no tiene SKUs */
 	precio_desde: number | null;
 	precio_hasta: number | null;
+	/** Rango de precios normales (sin rebajas), para mostrar el precio tachado */
+	precio_normal_desde: number | null;
+	precio_normal_hasta: number | null;
+	/** true si algún SKU tiene una rebaja vigente hoy */
+	en_rebaja: boolean;
 	stock_total: number;
 	colores: ProductoResumenColor[];
 }

@@ -8,6 +8,7 @@
 	import { XIcon } from '#lib/icons/outline/index.ts';
 	import type { ResolvedPathname } from '$app/types';
 	import type { NavSection } from '#lib/interfaces/index.ts';
+	import { currentTiendaStore } from '#lib/stores/index.ts';
 	import SidebarItem from './sidebarItem.svelte';
 	import StoreMenu from './storeMenu.svelte';
 
@@ -26,6 +27,15 @@
 		id = 'app-sidebar',
 		homeHref = resolve('/panel')
 	}: Props = $props();
+
+	// Logo y nombre de la tienda (localStorage; si faltan, el layout del panel los pide a la API).
+	// Mientras no estén, o si el logo no carga, se muestran los de la app
+	const tienda = $derived($currentTiendaStore);
+	const nombre = $derived(tienda?.nombre_tienda || APP_SITE_CONFIG.APP_NAME);
+	let failedLogo = $state<string | null>(null);
+	const logoUrl = $derived(
+		tienda?.logo_url && tienda.logo_url !== failedLogo ? tienda.logo_url : null
+	);
 
 	const isDesktop = new MediaQuery('(min-width: 1024px)', false);
 	let closeButton = $state<HTMLButtonElement>();
@@ -81,15 +91,27 @@
 	]}
 >
 	<div class="flex h-16 shrink-0 items-center justify-between gap-3 px-5">
-		<a href={homeHref} class="flex min-w-0 items-center gap-3">
-			<img
-				src={asset('images/logo_mark.webp')}
-				alt=""
-				width="36"
-				height="36"
-				class="size-9 shrink-0 ring-1 ring-white/20"
-			/>
-			<span class="truncate text-base font-semibold">{APP_SITE_CONFIG.APP_NAME}</span>
+		<a href={homeHref} class="flex min-w-0 items-center gap-3" title={nombre}>
+			{#if logoUrl}
+				<!-- Los logos no siempre son cuadrados: se encajan sin recortar sobre fondo claro -->
+				<img
+					src={logoUrl}
+					alt=""
+					width="36"
+					height="36"
+					onerror={() => (failedLogo = logoUrl)}
+					class="size-9 shrink-0 bg-light-one object-contain ring-1 ring-white/20 dark:bg-dark-two"
+				/>
+			{:else}
+				<img
+					src={asset('images/logo_mark.webp')}
+					alt=""
+					width="36"
+					height="36"
+					class="size-9 shrink-0 ring-1 ring-white/20"
+				/>
+			{/if}
+			<span class="truncate text-base font-semibold">{nombre}</span>
 		</a>
 		<button
 			bind:this={closeButton}

@@ -23,7 +23,7 @@
 	const tiendaName = $derived(tienda?.nombre_tienda || FALLBACK_NAME);
 
 	const fullName = $derived(user ? formatFullName(user, { fallback: '' }) : '');
-	// El perfil no es accesible para todos los roles (p. ej. SUPERADMIN): entonces la cuenta es solo informativa
+	// Si un rol no puede abrir el perfil, la cuenta se muestra solo como información
 	const canOpenPerfil = $derived(canAccessRoute($currentRole, '/panel/perfil'));
 
 	function close() {

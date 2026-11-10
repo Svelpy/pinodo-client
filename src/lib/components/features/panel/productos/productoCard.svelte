@@ -2,10 +2,17 @@
 	import { resolve } from '$app/paths';
 	import { Badge } from '#lib/components/ui/index.ts';
 	import type { Producto } from '#lib/interfaces/index.ts';
-	import { formatBoolean, formatDate, formatNumber, formatPriceRange } from '#lib/utils/index.ts';
+	import {
+		formatBoolean,
+		formatDate,
+		formatDateTime,
+		formatNumber,
+		formatRelativeTime
+	} from '#lib/utils/index.ts';
 	import ProductoActions from './productoActions.svelte';
 	import ProductoColores from './productoColores.svelte';
 	import ProductoPortada from './productoPortada.svelte';
+	import ProductoPrecio from './productoPrecio.svelte';
 
 	interface Props {
 		producto: Producto;
@@ -34,14 +41,13 @@
 		</h3>
 		<p class="truncate text-xs text-light-two_d dark:text-dark-two_d">{producto.seccion.nombre}</p>
 
-		<div class="mt-2 flex items-center gap-3 text-sm">
+		<ProductoPrecio resumen={producto.resumen} class="mt-3" />
+
+		<div class="mt-3">
 			<ProductoColores colores={producto.resumen.colores} max={4} />
-			<span class="font-medium text-light-two dark:text-dark-two">
-				{formatPriceRange(producto.resumen.precio_desde, producto.resumen.precio_hasta)}
-			</span>
 		</div>
 
-		<div class="mt-2 flex flex-wrap items-center gap-2">
+		<div class="mt-3 flex flex-wrap items-center gap-2">
 			<Badge variant={producto.is_visible ? 'success' : 'secondary'} dot>
 				{formatBoolean(producto.is_visible, { trueLabel: 'Visible', falseLabel: 'Oculto' })}
 			</Badge>
@@ -53,9 +59,16 @@
 				</span>
 			{/if}
 		</div>
-		<p class="mt-2 text-xs text-light-two_d dark:text-dark-two_d">
-			Creado el {formatDate(producto.created_at)}
-		</p>
+		<dl
+			class="mt-3 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs text-light-two_d dark:text-dark-two_d"
+		>
+			<dt>Creado</dt>
+			<dd>{formatDate(producto.created_at)}</dd>
+			<dt>Actualizado</dt>
+			<dd title={formatDateTime(producto.updated_at)}>
+				{formatRelativeTime(producto.updated_at)}
+			</dd>
+		</dl>
 	</div>
 	<div class="-mt-1.5 -mr-2 shrink-0 self-start">
 		<ProductoActions {producto} {onToggleVisible} {onDelete} />

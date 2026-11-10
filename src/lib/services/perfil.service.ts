@@ -5,17 +5,16 @@ import type {
 	UpdatePerfilRequest
 } from '#lib/interfaces/index.ts';
 
-/** Perfil del usuario de la sesión: todo sobre `/usuarios/me`, sin ID en la URL */
+/**
+ * Perfil del usuario de la sesión: todo sobre `/usuarios/me`, sin ID en la URL. Para leerlo se usa
+ * la sesión guardada (`currentUserStore`) o `authService.getMe()`, que además la actualiza.
+ */
 class PerfilService {
-	/** Siempre del servidor: el perfil no se lee de la sesión guardada en el navegador */
-	async get(): Promise<CurrentUser> {
-		return apiPinodo.get<CurrentUser>('/usuarios/me', { requireAuth: true });
-	}
-
 	async update(data: UpdatePerfilRequest): Promise<CurrentUser> {
 		return apiPinodo.patch<CurrentUser>('/usuarios/me', data, { requireAuth: true });
 	}
 
+	/** Revoca todas las sesiones del usuario (también la actual): hay que volver a iniciar sesión */
 	async changePassword(data: ChangePerfilPasswordRequest): Promise<CurrentUser> {
 		return apiPinodo.patch<CurrentUser>('/usuarios/me/password', data, { requireAuth: true });
 	}

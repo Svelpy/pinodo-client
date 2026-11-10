@@ -22,7 +22,7 @@ export interface RoleAccess {
 	exactRoutes?: readonly RouteId[];
 	/**
 	 * Se deniegan aunque `routes` las cubra (también sus subrutas). Para quitar una página puntual
-	 * a un rol que abre todo un área (p. ej. el perfil a SUPERADMIN, que abre todo '/panel').
+	 * a un rol que abre todo un área (p. ej. Mi negocio a SUPERADMIN, que abre todo '/panel').
 	 */
 	excludedRoutes?: readonly RouteId[];
 }
@@ -32,14 +32,15 @@ export const ROLE_ACCESS: Record<Role, RoleAccess> = {
 	[Role.SUPERADMIN]: {
 		home: '/panel',
 		routes: ['/panel'],
-		// No tiene perfil propio ni negocio que configurar
-		excludedRoutes: ['/panel/perfil', '/panel/mi-negocio']
+		// No tiene negocio que configurar
+		excludedRoutes: ['/panel/mi-negocio']
 	},
 	[Role.OWNER]: { home: '/panel', routes: ['/panel'] },
-	// Solo el OWNER edita los datos del negocio
-	[Role.ADMIN]: { home: '/panel', routes: ['/panel'], excludedRoutes: ['/panel/mi-negocio'] },
+	// OWNER y ADMIN editan los datos del negocio
+	[Role.ADMIN]: { home: '/panel', routes: ['/panel'] },
 	[Role.CAJERO]: {
-		home: '/panel/venta',
-		routes: ['/panel/venta', '/panel/historial-ventas', '/panel/perfil']
+		home: '/panel/ventas',
+		// '/panel/ventas' incluye el historial, el detalle y la edición de pedidos
+		routes: ['/panel/ventas', '/panel/perfil']
 	}
 };

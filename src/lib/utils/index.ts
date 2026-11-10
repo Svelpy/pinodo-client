@@ -18,3 +18,4 @@ export * from './date';
 export * from './venta.utils';
 export * from './tienda.utils';
 export * from './motion';
+export * from './negocio.utils';
