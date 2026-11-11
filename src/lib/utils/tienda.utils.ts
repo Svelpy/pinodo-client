@@ -177,13 +177,35 @@ export function paginaParam(params: URLSearchParams): number {
  */
 export function imagenUrl(url: string | null | undefined, width: number): string | null {
 	if (!url) return null;
+	return cloudinaryTransform(url, `f_auto,q_auto,c_limit,w_${width}`) ?? url;
+}
+
+/** Inserta una transformación en una URL de Cloudinary; null si no es de Cloudinary o ya trae una */
+function cloudinaryTransform(url: string, transform: string): string | null {
 	const marker = '/image/upload/';
 	const index = url.indexOf(marker);
-	if (index === -1 || !url.includes('res.cloudinary.com')) return url;
+	if (index === -1 || !url.includes('res.cloudinary.com')) return null;
 	const rest = url.slice(index + marker.length);
 	// Ya transformada (p. ej. "w_400,c_fill/..."): no se toca
-	if (/^[a-z]{1,3}_[^/]*\//.test(rest)) return url;
-	return `${url.slice(0, index + marker.length)}f_auto,q_auto,c_limit,w_${width}/${rest}`;
+	if (/^[a-z]{1,3}_[^/]*\//.test(rest)) return null;
+	return `${url.slice(0, index + marker.length)}${transform}/${rest}`;
+}
+
+export interface ImagenOg {
+	url: string;
+	width?: number;
+	height?: number;
+}
+
+/**
+ * Imagen para vistas previas al compartir (Open Graph / X): 1200×630 en JPG, con relleno del
+ * color del borde para que la prenda no se recorte. WhatsApp y otras redes no siempre leen
+ * WebP/AVIF, por eso no se usa `f_auto`. Fuera de Cloudinary no se conocen las medidas.
+ */
+export function imagenOg(url: string | null | undefined): ImagenOg | null {
+	if (!url) return null;
+	const transformada = cloudinaryTransform(url, 'f_jpg,q_auto,c_pad,b_auto,w_1200,h_630');
+	return transformada ? { url: transformada, width: 1200, height: 630 } : { url };
 }
 
 /** `srcset` responsive para una imagen de producto */
@@ -286,6 +308,38 @@ export function sincronizarCesta(items: CestaItem[], producto: TiendaProductoDet
 		};
 	});
 	return cambio ? actualizados : items;
+}
+
+// ── Compartir ─────────────────────────────────────────────────────────────────────────────────
+
+/** URL absoluta y limpia de un producto para compartir; solo conserva el color elegido */
+export function productoUrlCompartir(
+	origin: string,
+	producto: { slug: string; id: string },
+	colorId?: string | null
+): string {
+	const url = new URL(`/${slugIdParam(producto, 'p')}`, origin);
+	if (colorId) url.searchParams.set('color', colorId);
+	return url.href;
+}
+
+export interface CompartirEnlaces {
+	whatsapp: string;
+	facebook: string;
+	x: string;
+	telegram: string;
+}
+
+/** Enlaces para compartir en cada red cuando el navegador no tiene la hoja nativa */
+export function compartirEnlaces(url: string, texto: string): CompartirEnlaces {
+	const u = encodeURIComponent(url);
+	const t = encodeURIComponent(texto);
+	return {
+		whatsapp: `https://wa.me/?text=${encodeURIComponent(`${texto}\n${url}`)}`,
+		facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+		x: `https://x.com/intent/post?text=${t}&url=${u}`,
+		telegram: `https://t.me/share/url?url=${u}&text=${t}`
+	};
 }
 
 // ── WhatsApp ──────────────────────────────────────────────────────────────────────────────────

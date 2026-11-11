@@ -5,15 +5,24 @@
 	import { page } from '$app/state';
 	import type { TiendaProductoColor, TiendaProductoDetalle } from '#lib/interfaces/index.ts';
 	import { cestaStore } from '#lib/stores/index.ts';
-	import { duracion, imagenSrcset, imagenUrl } from '#lib/utils/index.ts';
+	import {
+		duracion,
+		formatCurrency,
+		imagenSrcset,
+		imagenUrl,
+		productoUrlCompartir
+	} from '#lib/utils/index.ts';
+	import TiendaCompartir from './tiendaCompartir.svelte';
 	import TiendaPrecio from './tiendaPrecio.svelte';
 
 	interface Props {
 		producto: TiendaProductoDetalle;
+		/** Nombre de la tienda (texto al compartir) */
+		tienda: string;
 		migas?: { label: string; href: string }[];
 	}
 
-	let { producto, migas = [] }: Props = $props();
+	let { producto, tienda, migas = [] }: Props = $props();
 
 	function colorInicial(): TiendaProductoColor | undefined {
 		const pedido = page.url.searchParams.get('color');
@@ -55,6 +64,17 @@
 			precio_normal_hasta: Math.max(...normales),
 			en_rebaja: skus.some((s) => s.en_rebaja)
 		};
+	});
+
+	// Se comparte el color que se está viendo: la vista previa usa su foto
+	const compartirUrl = $derived(productoUrlCompartir(page.url.origin, producto, color?.color.id));
+	const compartirTexto = $derived.by(() => {
+		const precio =
+			precios.precio_desde === precios.precio_hasta
+				? formatCurrency(precios.precio_desde)
+				: `desde ${formatCurrency(precios.precio_desde)}`;
+		const variante = color && producto.colores.length > 1 ? ` (${color.color.nombre})` : '';
+		return `${producto.nombre}${variante} · ${precio} en ${tienda}`;
 	});
 
 	// Precios y stock de la cesta al día con la ficha
@@ -173,7 +193,15 @@
 						</ol>
 					</nav>
 				{/if}
-				<h1 class="text-sm font-semibold md:text-base">{producto.nombre}</h1>
+				<div class="flex items-start justify-between gap-4">
+					<h1 class="text-sm font-semibold md:text-base">{producto.nombre}</h1>
+					<TiendaCompartir
+						url={compartirUrl}
+						titulo={producto.nombre}
+						texto={compartirTexto}
+						class="shrink-0"
+					/>
+				</div>
 				<!-- El precio cambia al elegir color o talla -->
 				{#key `${precios.precio_desde}-${precios.precio_hasta}-${precios.en_rebaja}`}
 					<div in:fly={{ y: -6, duration: duracion(260), easing: cubicOut }}>

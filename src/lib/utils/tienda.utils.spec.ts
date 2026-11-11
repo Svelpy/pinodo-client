@@ -5,15 +5,18 @@ import {
 	agregarACesta,
 	cambiarCantidadCesta,
 	CESTA_MAX_CANTIDAD,
+	compartirEnlaces,
 	contarFiltros,
 	filtrosToQuery,
 	filtrosToSearchParams,
+	imagenOg,
 	imagenUrl,
 	mensajeMantenimiento,
 	mensajePedido,
 	paginaParam,
 	parseFiltros,
 	parseSlugId,
+	productoUrlCompartir,
 	sincronizarCesta,
 	slugIdParam,
 	totalCesta,
@@ -139,6 +142,49 @@ describe('imagenUrl', () => {
 		expect(imagenUrl(transformada, 400)).toBe(transformada);
 		expect(imagenUrl('https://cdn.test/a.jpg', 400)).toBe('https://cdn.test/a.jpg');
 		expect(imagenUrl(null, 400)).toBeNull();
+	});
+});
+
+describe('imagenOg', () => {
+	it('adapta Cloudinary a 1200×630 en JPG', () => {
+		expect(imagenOg('https://res.cloudinary.com/demo/image/upload/v1/a.png')).toEqual({
+			url: 'https://res.cloudinary.com/demo/image/upload/f_jpg,q_auto,c_pad,b_auto,w_1200,h_630/v1/a.png',
+			width: 1200,
+			height: 630
+		});
+	});
+
+	it('sin medidas si no es de Cloudinary o ya está transformada', () => {
+		const transformada = 'https://res.cloudinary.com/demo/image/upload/w_100/a.jpg';
+		expect(imagenOg(transformada)).toEqual({ url: transformada });
+		expect(imagenOg('https://cdn.test/a.jpg')).toEqual({ url: 'https://cdn.test/a.jpg' });
+		expect(imagenOg(undefined)).toBeNull();
+	});
+});
+
+describe('compartir', () => {
+	it('productoUrlCompartir arma la URL canónica y solo conserva el color', () => {
+		const producto = { slug: 'vestido-midi', id: ID };
+		expect(productoUrlCompartir('https://tienda.test', producto)).toBe(
+			`https://tienda.test/vestido-midi-p${ID}`
+		);
+		expect(productoUrlCompartir('https://tienda.test', producto, COLOR)).toBe(
+			`https://tienda.test/vestido-midi-p${ID}?color=${COLOR}`
+		);
+	});
+
+	it('compartirEnlaces codifica texto y URL', () => {
+		const url = `https://tienda.test/vestido-p${ID}?color=${COLOR}`;
+		const enlaces = compartirEnlaces(url, 'Camisa & falda · Bs 10');
+		expect(enlaces.whatsapp).toBe(
+			`https://wa.me/?text=${encodeURIComponent(`Camisa & falda · Bs 10\n${url}`)}`
+		);
+		expect(enlaces.facebook).toBe(
+			`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
+		);
+		expect(new URL(enlaces.x).searchParams.get('text')).toBe('Camisa & falda · Bs 10');
+		expect(new URL(enlaces.x).searchParams.get('url')).toBe(url);
+		expect(new URL(enlaces.telegram).searchParams.get('url')).toBe(url);
 	});
 });
 

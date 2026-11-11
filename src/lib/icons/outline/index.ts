@@ -90,3 +90,5 @@ export { default as Menu2Icon } from './menu2Icon.svelte';
 export { default as ShareIcon } from './shareIcon.svelte';
 export { default as SquarePlusIcon } from './squarePlusIcon.svelte';
 export { default as LayoutGridIcon } from './layoutGridIcon.svelte';
+export { default as BrandXIcon } from './brandXIcon.svelte';
+export { default as TelegramIcon } from './telegramIcon.svelte';

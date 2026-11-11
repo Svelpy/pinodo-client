@@ -13,3 +13,4 @@ export { default as TiendaSeo } from './tiendaSeo.svelte';
 export { default as TiendaProgreso } from './tiendaProgreso.svelte';
 export { default as TiendaLogo } from './tiendaLogo.svelte';
 export { default as TiendaBuscador } from './tiendaBuscador.svelte';
+export { default as TiendaCompartir } from './tiendaCompartir.svelte';
