@@ -299,20 +299,31 @@ describe('fechas y permisos', () => {
 		).toMatchObject({ desde: '2026-10-01', hasta: undefined, numero: 12, canal: 'TIENDA' });
 	});
 
-	it('accionesVenta: el cajero gestiona pendientes pero no anula cobradas', () => {
-		expect(accionesVenta({ estado: 'PENDIENTE' }, 'CAJERO')).toEqual({
-			editar: true,
-			cobrar: true,
-			cancelar: true
-		});
-		expect(accionesVenta({ estado: 'CONFIRMADA' }, 'CAJERO').cancelar).toBe(false);
-		expect(accionesVenta({ estado: 'CONFIRMADA' }, 'ADMIN').cancelar).toBe(true);
-		expect(accionesVenta({ estado: 'CANCELADA' }, 'OWNER')).toEqual({
-			editar: false,
-			cobrar: false,
-			cancelar: false
-		});
-		expect(accionesVenta({ estado: 'PENDIENTE' }, 'SUPERADMIN').cobrar).toBe(false);
+	const TODO = { editar: true, cobrar: true, cancelar: true };
+	const NADA = { editar: false, cobrar: false, cancelar: false };
+
+	it.each(['OWNER', 'ADMIN', 'CAJERO'] as const)(
+		'accionesVenta: %s edita, cobra y cancela un pedido pendiente',
+		(role) => {
+			expect(accionesVenta({ estado: 'PENDIENTE' }, role)).toEqual(TODO);
+		}
+	);
+
+	it('accionesVenta: OWNER y ADMIN anulan una venta cobrada; CAJERO y SUPERADMIN no', () => {
+		for (const role of ['OWNER', 'ADMIN'] as const) {
+			expect(accionesVenta({ estado: 'CONFIRMADA' }, role)).toEqual({ ...NADA, cancelar: true });
+		}
+		for (const role of ['CAJERO', 'SUPERADMIN'] as const) {
+			expect(accionesVenta({ estado: 'CONFIRMADA' }, role)).toEqual(NADA);
+		}
+	});
+
+	it('accionesVenta: el SUPERADMIN solo consulta; una venta cancelada no admite nada', () => {
+		expect(accionesVenta({ estado: 'PENDIENTE' }, 'SUPERADMIN')).toEqual(NADA);
+		for (const role of ['SUPERADMIN', 'OWNER', 'ADMIN', 'CAJERO'] as const) {
+			expect(accionesVenta({ estado: 'CANCELADA' }, role)).toEqual(NADA);
+		}
+		expect(accionesVenta({ estado: 'PENDIENTE' }, null)).toEqual(NADA);
 	});
 });
 

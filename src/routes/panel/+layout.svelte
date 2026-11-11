@@ -60,12 +60,8 @@
 	class="min-h-dvh bg-light-three lg:h-dvh lg:overflow-hidden lg:py-2 lg:pr-2 lg:pl-64 dark:bg-dark-one"
 >
 	<Sidebar {sections} bind:open={sidebarOpen} id={SIDEBAR_ID} {homeHref} />
-
-	<!-- `relative`: los elementos con position absolute de las páginas (p. ej. los textos sr-only)
-	     deben quedar contenidos en esta tarjeta con scroll. Si no, se ubican respecto a la página,
-	     la hacen más alta que la ventana y aparece un segundo scroll que descoloca el layout. -->
 	<div
-		class="relative flex min-h-dvh flex-col bg-light-one lg:h-full lg:min-h-0 lg:overflow-y-auto lg:rounded-xl dark:bg-dark-one_d"
+		class="relative flex flex-col bg-light-one lg:h-full lg:min-h-0 lg:overflow-y-auto lg:rounded-xl dark:bg-dark-one_d"
 	>
 		<Header
 			title={activeItem?.label ?? 'Panel'}

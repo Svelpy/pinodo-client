@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { WhatsappIcon } from '#lib/icons/outline/index.ts';
 	import type { TiendaConfigPublica } from '#lib/interfaces/index.ts';
-	import { whatsappUrl } from '#lib/utils/index.ts';
+	import { mensajeMantenimiento, whatsappUrl } from '#lib/utils/index.ts';
 
 	interface Props {
 		tienda: TiendaConfigPublica;
@@ -8,7 +9,10 @@
 
 	let { tienda }: Props = $props();
 
-	const whatsapp = $derived(whatsappUrl(tienda.whatsapp));
+	// Mensaje listo para que el cliente avise a la tienda que quiere comprar (editable en WhatsApp)
+	const whatsapp = $derived(
+		whatsappUrl(tienda.whatsapp, mensajeMantenimiento(tienda.nombre_tienda))
+	);
 </script>
 
 <svelte:head>
@@ -38,21 +42,33 @@
 		atenderte lo antes posible. Gracias por tu paciencia.
 	</p>
 
-	{#if whatsapp || tienda.telefono || tienda.email_contacto}
+	{#if whatsapp}
+		<div class="mt-10 flex max-w-md flex-col items-center gap-3">
+			<p class="text-sm leading-relaxed">
+				¿Querías ver el catálogo y comprar? <strong>Avísale a la tienda</strong>: cuantos más
+				clientes la esperan, antes vuelve.
+			</p>
+			<a
+				href={whatsapp}
+				target="_blank"
+				rel="noopener"
+				class="inline-flex h-12 items-center gap-2 bg-light-two px-8 text-editorial text-light-one transition-colors hover:bg-light-three dark:bg-dark-two dark:text-dark-one"
+			>
+				<WhatsappIcon class="size-4" />
+				Quiero comprar, avísales
+			</a>
+			<p class="text-xs text-light-two_d dark:text-dark-two_d">
+				Se abre WhatsApp con un mensaje listo; puedes editarlo antes de enviar.
+			</p>
+		</div>
+	{/if}
+
+	{#if tienda.telefono || tienda.email_contacto}
 		<div class="mt-10 space-y-2 text-editorial">
-			<p class="text-light-two_d dark:text-dark-two_d">Mientras tanto, escríbenos</p>
-			{#if whatsapp}
-				<p>
-					<a href={whatsapp} target="_blank" rel="noopener" class="underline underline-offset-4"
-						>WhatsApp</a
-					>
-				</p>
-			{/if}
+			<p class="text-light-two_d dark:text-dark-two_d">También puedes contactarlos</p>
 			{#if tienda.telefono}
 				<p>
-					<a href="tel:{tienda.telefono.replace(/\s/g, '')}" class="underline underline-offset-4"
-						>{tienda.telefono}</a
-					>
+					<span class="underline underline-offset-4">{tienda.telefono}</span>
 				</p>
 			{/if}
 			{#if tienda.email_contacto}

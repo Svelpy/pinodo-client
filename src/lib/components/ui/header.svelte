@@ -19,7 +19,7 @@
 </script>
 
 <header
-	class="sticky top-0 z-30 flex h-16 items-center gap-3 bg-light-one/85 px-4 backdrop-blur md:px-6 lg:px-8 dark:border-dark-one_d dark:bg-dark-one_d/85"
+	class="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 bg-light-one px-4 backdrop-blur md:px-6 lg:px-8 dark:border-dark-one_d dark:bg-dark-one_d/85"
 >
 	<button
 		type="button"

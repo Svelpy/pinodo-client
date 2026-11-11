@@ -22,19 +22,20 @@ import { formatCurrency, formatVentaNumero } from './format';
 import { can } from './rbac.utils';
 
 // ── Permisos ──────────────────────────────────────────────────────────────────────────────────
-// Espejo del backend: registrar es VENTA:CREATE; con eso un CAJERO también edita, cobra y cancela sus
-// pedidos pendientes. Anular una venta ya cobrada (devuelve el stock) exige VENTA:UPDATE.
+// Espejo del backend: registrar es VENTA:CREATE; editar, cobrar y cancelar un pedido pendiente
+// (PUT de ítems y PATCH de estado) es VENTA:UPDATE; anular una venta ya cobrada (devuelve el stock)
+// exige VENTA:DELETE. Hoy: OWNER y ADMIN todo; el CAJERO no anula cobradas; SUPERADMIN solo consulta.
 
 export function puedeRegistrarVenta(role: Role | null): boolean {
 	return can(role, Module.VENTA, Action.CREATE);
 }
 
 export function puedeGestionarPendiente(role: Role | null): boolean {
-	return can(role, Module.VENTA, Action.CREATE) || can(role, Module.VENTA, Action.UPDATE);
+	return can(role, Module.VENTA, Action.UPDATE);
 }
 
 export function puedeAnularCobrada(role: Role | null): boolean {
-	return can(role, Module.VENTA, Action.UPDATE);
+	return can(role, Module.VENTA, Action.DELETE);
 }
 
 /** Acciones que admite una venta según su estado y el rol */

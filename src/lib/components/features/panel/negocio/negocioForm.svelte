@@ -173,7 +173,7 @@
 				<NegocioImagenField
 					id="{id}-logo"
 					label="Logo"
-					hint="Hasta 5 MB, sin SVG. Se muestra en la tienda y en el panel."
+					hint="Lo verán tus clientes en la tienda y también aparece en el menú lateral de este panel. Hasta 5 MB, sin SVG."
 					currentUrl={tienda.logo_url}
 					bind:value={logo}
 					error={errors.logo}
@@ -182,7 +182,7 @@
 				<NegocioImagenField
 					id="{id}-favicon"
 					label="Favicon"
-					hint="Imagen cuadrada (p. ej. 512 × 512) de hasta 5 MB: el icono de la pestaña del navegador."
+					hint="Icono de la tienda en los metadatos del sitio: se ve en la pestaña del navegador y en favoritos. Imagen cuadrada (p. ej. 512 × 512) de hasta 5 MB, sin SVG."
 					currentUrl={tienda.favicon_url}
 					bind:value={favicon}
 					error={errors.favicon}

@@ -79,13 +79,13 @@
 			onCesta={cestaStore.abrir}
 		/>
 
-		<div class="flex flex-1 px-4 md:px-10 xl:px-12">
+		<div class="relative flex flex-1 px-4 md:px-10 xl:px-12">
 			{#if menuLateral && data.navegacion.length > 0}
 				<aside
-					class="hidden w-60 shrink-0 overflow-hidden pr-8 lg:block"
+					class="hidden w-60 shrink-0 overflow-clip pr-8 lg:block"
 					transition:slide={{ axis: 'x', duration: duracion(300), easing: cubicOut }}
 				>
-					<div class="sticky top-0 max-h-[calc(100dvh-9rem)] overflow-y-auto pb-10">
+					<div class="sticky top-1 max-h-[calc(100dvh-9rem)] overflow-y-auto pb-10">
 						<TiendaLogo tienda={data.tienda} class="mb-10" />
 						<TiendaMenu
 							navegacion={data.navegacion}
@@ -98,7 +98,6 @@
 			{/if}
 
 			<main id="contenido" class="min-w-0 flex-1 pt-6 lg:pt-10">
-				<!-- Cada página nueva entra con un fundido; los cambios de filtros (misma ruta) los anima el grid -->
 				{#key page.url.pathname}
 					<div in:fade={{ duration: duracion(280) }}>
 						{@render children()}

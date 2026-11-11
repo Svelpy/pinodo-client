@@ -297,6 +297,20 @@ export function whatsappUrl(numero: string | null | undefined, texto?: string): 
 	return `https://wa.me/${digitos}${texto ? `?text=${encodeURIComponent(texto)}` : ''}`;
 }
 
+/**
+ * Mensaje que un cliente le envía a la tienda cuando el sitio está en mantenimiento. Está escrito en
+ * la voz del cliente (puede editarlo antes de enviar) y le muestra al dueño que hay compradores
+ * reales esperando, para motivarlo a reactivar la tienda en línea.
+ */
+export function mensajeMantenimiento(tienda: string): string {
+	return [
+		`¡Hola, ${tienda}! 👋`,
+		'Entré a su tienda en línea porque quería ver sus productos y comprar, pero aparece en mantenimiento y no pude ver el catálogo. 😕',
+		'Me gustaría hacerles un pedido: ¿pueden reactivarla pronto? Así más clientes como yo podemos comprarles desde el celular sin esperar.',
+		'¡Muchas gracias y mucho éxito! 🛍️'
+	].join('\n\n');
+}
+
 export interface PedidoWhatsappOptions {
 	tienda: string;
 	/** Origen del sitio para armar los enlaces a cada producto (p. ej. https://mitienda.com) */

@@ -124,11 +124,44 @@ describe('canAccessRoute', () => {
 });
 
 describe('can', () => {
-	it('CAJERO crea y lee ventas, pero no las edita ni elimina', () => {
+	// Módulos que no son ventas ni el negocio (este último es una sola fila: nadie lo crea ni elimina)
+	const GESTION = Object.values(Module).filter(
+		(module) => module !== Module.VENTA && module !== Module.NEGOCIO
+	);
+
+	it.each([Role.SUPERADMIN, Role.OWNER])('%s tiene todas las acciones fuera de ventas', (role) => {
+		for (const module of GESTION) {
+			for (const action of Object.values(Action)) {
+				expect(can(role, module, action)).toBe(true);
+			}
+		}
+	});
+
+	it('ADMIN crea, lee y actualiza fuera de ventas, pero no elimina', () => {
+		for (const module of [...GESTION, Module.NEGOCIO]) {
+			expect(can(Role.ADMIN, module, Action.READ)).toBe(true);
+			expect(can(Role.ADMIN, module, Action.UPDATE)).toBe(true);
+			expect(can(Role.ADMIN, module, Action.DELETE)).toBe(false);
+		}
+		for (const module of GESTION) {
+			expect(can(Role.ADMIN, module, Action.CREATE)).toBe(true);
+		}
+	});
+
+	it('ventas: OWNER y ADMIN todo; el CAJERO no anula cobradas (DELETE); SUPERADMIN solo lee', () => {
+		for (const role of [Role.OWNER, Role.ADMIN]) {
+			for (const action of Object.values(Action)) {
+				expect(can(role, Module.VENTA, action)).toBe(true);
+			}
+		}
 		expect(can(Role.CAJERO, Module.VENTA, Action.CREATE)).toBe(true);
 		expect(can(Role.CAJERO, Module.VENTA, Action.READ)).toBe(true);
-		expect(can(Role.CAJERO, Module.VENTA, Action.UPDATE)).toBe(false);
+		expect(can(Role.CAJERO, Module.VENTA, Action.UPDATE)).toBe(true);
 		expect(can(Role.CAJERO, Module.VENTA, Action.DELETE)).toBe(false);
+		expect(can(Role.SUPERADMIN, Module.VENTA, Action.READ)).toBe(true);
+		for (const action of [Action.CREATE, Action.UPDATE, Action.DELETE]) {
+			expect(can(Role.SUPERADMIN, Module.VENTA, action)).toBe(false);
+		}
 	});
 
 	it('CAJERO solo lee categorías, productos, colores y negocio', () => {
@@ -140,32 +173,14 @@ describe('can', () => {
 		}
 	});
 
-	it.each([Module.SECCION, Module.TALLA, Module.ARCHIVO])(
-		'%s: SUPERADMIN, OWNER y ADMIN tienen todas las acciones; el CAJERO ninguna',
+	it.each([Module.SECCION, Module.TALLA, Module.ARCHIVO, Module.USUARIO])(
+		'CAJERO no tiene ninguna acción en %s',
 		(module) => {
-			for (const role of [Role.SUPERADMIN, Role.OWNER, Role.ADMIN]) {
-				for (const action of Object.values(Action)) {
-					expect(can(role, module, action)).toBe(true);
-				}
-			}
 			for (const action of Object.values(Action)) {
 				expect(can(Role.CAJERO, module, action)).toBe(false);
 			}
 		}
 	);
-
-	it('CAJERO no accede al módulo de usuarios', () => {
-		expect(can(Role.CAJERO, Module.USUARIO, Action.READ)).toBe(false);
-	});
-
-	it('SUPERADMIN solo lee ventas: el backend no le permite crearlas', () => {
-		expect(can(Role.SUPERADMIN, Module.VENTA, Action.READ)).toBe(true);
-		expect(can(Role.SUPERADMIN, Module.VENTA, Action.CREATE)).toBe(false);
-	});
-
-	it.each([Role.OWNER, Role.ADMIN])('%s crea ventas', (role) => {
-		expect(can(role, Module.VENTA, Action.CREATE)).toBe(true);
-	});
 
 	it.each([Role.OWNER, Role.ADMIN])('%s lee y edita el negocio, pero no lo elimina', (role) => {
 		expect(can(role, Module.NEGOCIO, Action.READ)).toBe(true);
@@ -179,17 +194,6 @@ describe('can', () => {
 			expect(can(role, Module.NEGOCIO, Action.UPDATE)).toBe(false);
 		}
 	});
-
-	it.each([Role.SUPERADMIN, Role.OWNER, Role.ADMIN])(
-		'%s gestiona catálogo y usuarios por completo',
-		(role) => {
-			for (const module of [Module.CATEGORIA, Module.PRODUCTO, Module.COLOR, Module.USUARIO]) {
-				for (const action of Object.values(Action)) {
-					expect(can(role, module, action)).toBe(true);
-				}
-			}
-		}
-	);
 
 	it('deniega sin rol', () => {
 		expect(can(null, Module.CATEGORIA, Action.READ)).toBe(false);

@@ -1,4 +1,5 @@
 export * from './auth.schema';
+export * from './archivo.schema';
 export * from './categoria.schema';
 export * from './color.schema';
 export * from './producto.schema';

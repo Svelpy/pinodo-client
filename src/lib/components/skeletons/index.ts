@@ -1,4 +1,5 @@
 export { default as CategoriaListSkeleton } from './categoriaListSkeleton.svelte';
+export { default as ArchivoListSkeleton } from './archivoListSkeleton.svelte';
 export { default as ColorListSkeleton } from './colorListSkeleton.svelte';
 export { default as ProductoFichaSkeleton } from './productoFichaSkeleton.svelte';
 export { default as ProductoListSkeleton } from './productoListSkeleton.svelte';

@@ -21,9 +21,10 @@ export const Module = {
 	CATEGORIA: 'CATEGORIA',
 	PRODUCTO: 'PRODUCTO',
 	COLOR: 'COLOR',
-	// Todas las acciones para SUPERADMIN, OWNER y ADMIN (fullAccess); el CAJERO no tiene acceso
+	// El CAJERO no tiene acceso a estos tres
 	SECCION: 'SECCION',
 	TALLA: 'TALLA',
+	// Biblioteca de imágenes (`IMAGEN` en el backend)
 	ARCHIVO: 'ARCHIVO',
 	NEGOCIO: 'NEGOCIO'
 } as const;
@@ -78,31 +79,46 @@ export const RESUMEN_CAJERO_ROLES: readonly Role[] = [Role.CAJERO];
 type ModulePermissions = Partial<Record<Module, readonly Action[]>>;
 
 const ALL_ACTIONS: readonly Action[] = [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE];
+const SIN_ELIMINAR: readonly Action[] = [Action.CREATE, Action.READ, Action.UPDATE];
 const SOLO_LECTURA: readonly Action[] = [Action.READ];
 
-/** Todas las acciones en todos los módulos, salvo las `overrides` indicadas */
-function fullAccess(overrides: ModulePermissions = {}): ModulePermissions {
+/** Las mismas acciones en todos los módulos, salvo las `overrides` indicadas */
+function everyModule(actions: readonly Action[], overrides: ModulePermissions): ModulePermissions {
 	const permissions: ModulePermissions = {};
-	for (const module of Object.values(Module)) permissions[module] = ALL_ACTIONS;
+	for (const module of Object.values(Module)) permissions[module] = actions;
 	return { ...permissions, ...overrides };
 }
+
+/** Todas las acciones en todos los módulos, salvo las `overrides` indicadas */
+const fullAccess = (overrides: ModulePermissions = {}) => everyModule(ALL_ACTIONS, overrides);
+
+/** Crear, leer y actualizar en todos los módulos, nunca eliminar, salvo las `overrides` indicadas */
+const sinEliminar = (overrides: ModulePermissions = {}) => everyModule(SIN_ELIMINAR, overrides);
 
 /**
  * Un módulo ausente en un rol = sin acceso a ese módulo (ni siquiera lectura).
  * `Record<Role, ...>` obliga a configurar aquí cualquier rol nuevo.
+ *
+ * Ventas: registrar es VENTA:CREATE; editar, cobrar y cancelar un pendiente, VENTA:UPDATE; anular
+ * una venta ya cobrada (devuelve el stock), VENTA:DELETE.
+ * El negocio es una sola fila: nadie lo crea ni lo elimina.
  */
 export const ROLE_PERMISSIONS: Record<Role, ModulePermissions> = {
-	// Abre la página de venta pero el backend no le permite crear ventas
+	// Todo salvo ventas: las consulta, pero no registra, edita, cobra, cancela ni anula
 	[Role.SUPERADMIN]: fullAccess({
 		[Module.VENTA]: SOLO_LECTURA,
 		[Module.NEGOCIO]: SOLO_LECTURA
 	}),
-	// OWNER y ADMIN editan los datos del negocio (no lo crean ni eliminan: es una sola fila)
+	// Todo, incluido eliminar y anular ventas cobradas
 	[Role.OWNER]: fullAccess({ [Module.NEGOCIO]: [Action.READ, Action.UPDATE] }),
-	[Role.ADMIN]: fullAccess({ [Module.NEGOCIO]: [Action.READ, Action.UPDATE] }),
+	// Todo menos eliminar, salvo en ventas: también anula ventas cobradas
+	[Role.ADMIN]: sinEliminar({
+		[Module.VENTA]: ALL_ACTIONS,
+		[Module.NEGOCIO]: [Action.READ, Action.UPDATE]
+	}),
+	// Solo lectura de lo que necesita para vender; en ventas registra y gestiona los pendientes
 	[Role.CAJERO]: {
-		[Module.VENTA]: [Action.CREATE, Action.READ],
-		// Lectura de lo que necesita para vender
+		[Module.VENTA]: SIN_ELIMINAR,
 		[Module.CATEGORIA]: SOLO_LECTURA,
 		[Module.PRODUCTO]: SOLO_LECTURA,
 		[Module.COLOR]: SOLO_LECTURA,

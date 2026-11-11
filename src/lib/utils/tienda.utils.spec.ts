@@ -9,6 +9,7 @@ import {
 	filtrosToQuery,
 	filtrosToSearchParams,
 	imagenUrl,
+	mensajeMantenimiento,
 	mensajePedido,
 	paginaParam,
 	parseFiltros,
@@ -212,5 +213,15 @@ describe('WhatsApp', () => {
 		expect(mensaje).toContain('Nombre: Ana');
 		expect(mensaje).not.toContain('Agotado');
 		expect(mensaje).not.toContain('Nota:');
+	});
+
+	it('mensajeMantenimiento va en voz del cliente y pide reactivar la tienda', () => {
+		const mensaje = mensajeMantenimiento('Tienda Moda');
+		expect(mensaje).toContain('¡Hola, Tienda Moda!');
+		expect(mensaje).toContain('mantenimiento');
+		expect(mensaje).toContain('reactivarla');
+		// Se puede codificar en un enlace wa.me sin perder el texto
+		const url = whatsappUrl('+591 712-34567', mensaje);
+		expect(decodeURIComponent(url?.split('?text=')[1] ?? '')).toBe(mensaje);
 	});
 });

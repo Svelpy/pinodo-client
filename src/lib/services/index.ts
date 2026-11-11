@@ -1,5 +1,6 @@
 export * from './error.service';
 export * from './auth.service';
+export * from './archivo.service';
 
 export * from './imagen.service';
 export * from './perfil.service';

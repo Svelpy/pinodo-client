@@ -40,7 +40,7 @@
 		'overflow-hidden border border-light-one_d bg-light-one dark:border-dark-one_d dark:bg-dark-one';
 </script>
 
-<section aria-busy={isLoading}>
+<section>
 	{#if error && !hasData}
 		<div class={frame}>
 			<EmptyState

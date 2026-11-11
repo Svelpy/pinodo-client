@@ -2,7 +2,7 @@
 	import { MainLayout } from '#lib/components/layout/index.ts';
 	import { InicioAtajos, InicioModulos } from '#lib/components/features/panel/inicio/index.ts';
 	import { PANEL_NAVIGATION } from '#lib/config/navigation.config.ts';
-	import { currentRole, currentTiendaStore, currentUserStore } from '#lib/stores/index.ts';
+	import { currentRole, currentUserStore } from '#lib/stores/index.ts';
 	import { filterNavigation, formatDateLong } from '#lib/utils/index.ts';
 
 	const sections = $derived(filterNavigation(PANEL_NAVIGATION, $currentRole));
@@ -26,11 +26,6 @@
 		<h2 class="text-2xl font-semibold text-light-two dark:text-dark-two">
 			{saludo()}{nombre ? `, ${nombre}` : ''}
 		</h2>
-		{#if $currentTiendaStore?.nombre_tienda}
-			<p class="text-sm text-light-two_d dark:text-dark-two_d">
-				Esto es lo que puedes hacer hoy en {$currentTiendaStore.nombre_tienda}.
-			</p>
-		{/if}
 	</div>
 
 	<InicioAtajos role={$currentRole} />

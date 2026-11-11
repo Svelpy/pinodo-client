@@ -149,14 +149,13 @@
 			onVisibleChange={(next) => applyFilters({ isVisible: next })}
 		/>
 		{#if canCreate}
-			<Button onclick={() => openForm(null)} class="w-full sm:w-auto">
+			<Button onclick={() => openForm(null)} class="w-full lg:w-auto">
 				{#snippet leftIcon()}<PlusIcon class="size-5" />{/snippet}
 				Nueva categoría
 			</Button>
 		{/if}
 	</div>
 
-	<!-- Las acciones se pasan según permisos; sin handler no se muestra la opción -->
 	<CategoriaList
 		{arbol}
 		{hasFilters}

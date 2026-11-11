@@ -1,4 +1,5 @@
 export * from './auth.interface';
+export * from './archivo.interface';
 export * from './error.interface';
 export * from './menuSidebarItem.interface';
 export * from './categoria.interface';
