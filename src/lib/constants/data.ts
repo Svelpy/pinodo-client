@@ -87,29 +87,56 @@ export const VENTA_ESTADO_BADGE: Record<VentaEstado, 'warning' | 'success' | 'er
 	CANCELADA: 'error'
 };
 
-/** Por dónde llegó la venta: pedido de WhatsApp (ecommerce) o mostrador */
+/** Por dónde llegó la venta */
 export const VENTA_CANAL = {
+	/** Venta presencial en el local */
 	TIENDA: 'TIENDA',
-	WHATSAPP: 'WHATSAPP'
+	/** El cliente escribe directo por WhatsApp */
+	WHATSAPP: 'WHATSAPP',
+	/** Venta tomada durante una transmisión en vivo */
+	TIKTOK_LIVE: 'TIKTOK_LIVE',
+	/** DM o TikTok Shop, fuera del live */
+	TIKTOK: 'TIKTOK',
+	/** DM de Instagram */
+	INSTAGRAM: 'INSTAGRAM',
+	/** Messenger o Marketplace */
+	FACEBOOK: 'FACEBOOK',
+	/** Pedido desde el catálogo público */
+	PAGINA_WEB: 'PAGINA_WEB',
+	OTROS: 'OTROS'
 } as const;
 export type VentaCanal = (typeof VENTA_CANAL)[keyof typeof VENTA_CANAL];
 
 export const VENTA_CANAL_LABEL: Record<VentaCanal, string> = {
 	TIENDA: 'Tienda',
-	WHATSAPP: 'WhatsApp'
+	WHATSAPP: 'WhatsApp',
+	TIKTOK_LIVE: 'TikTok Live',
+	TIKTOK: 'TikTok',
+	INSTAGRAM: 'Instagram',
+	FACEBOOK: 'Facebook',
+	PAGINA_WEB: 'Página web',
+	OTROS: 'Otro canal'
 };
 
 export const METODO_PAGO = {
 	EFECTIVO: 'EFECTIVO',
 	QR: 'QR',
-	TRANSFERENCIA: 'TRANSFERENCIA'
+	TRANSFERENCIA: 'TRANSFERENCIA',
+	TARJETA: 'TARJETA',
+	CHEQUE: 'CHEQUE',
+	VALES: 'VALES',
+	OTROS: 'OTROS'
 } as const;
 export type MetodoPago = (typeof METODO_PAGO)[keyof typeof METODO_PAGO];
 
 export const METODO_PAGO_LABEL: Record<MetodoPago, string> = {
 	EFECTIVO: 'Efectivo',
 	QR: 'QR',
-	TRANSFERENCIA: 'Transferencia'
+	TRANSFERENCIA: 'Transferencia',
+	TARJETA: 'Tarjeta',
+	CHEQUE: 'Cheque',
+	VALES: 'Vales',
+	OTROS: 'Otro método'
 };
 
 /** Rangos de fecha rápidos del historial de ventas */
@@ -164,3 +191,39 @@ export const REDES_SOCIALES_SUGERIDAS = [
 	'linkedin',
 	'pinterest'
 ] as const;
+
+/**
+ * Tipos de movimiento de inventario (kardex). INGRESO = entrada de mercadería; VENTA = salida al
+ * cobrar; ANULACION = devolución al anular una venta cobrada; AJUSTE = corrección manual del stock.
+ */
+export const MOVIMIENTO_TIPO = {
+	INGRESO: 'INGRESO',
+	VENTA: 'VENTA',
+	ANULACION: 'ANULACION',
+	AJUSTE: 'AJUSTE'
+} as const;
+export type MovimientoTipo = (typeof MOVIMIENTO_TIPO)[keyof typeof MOVIMIENTO_TIPO];
+
+export const MOVIMIENTO_TIPO_LABEL: Record<MovimientoTipo, string> = {
+	INGRESO: 'Ingreso',
+	VENTA: 'Venta',
+	ANULACION: 'Anulación',
+	AJUSTE: 'Ajuste'
+};
+
+/** Variante de `Badge` para cada tipo de movimiento */
+export const MOVIMIENTO_TIPO_BADGE: Record<
+	MovimientoTipo,
+	'success' | 'info' | 'warning' | 'secondary'
+> = {
+	INGRESO: 'success',
+	VENTA: 'info',
+	ANULACION: 'warning',
+	AJUSTE: 'secondary'
+};
+
+/** Límites de los filtros de `GET /movimientos-inventario/costos` */
+export const KARDEX_LIMITS = {
+	NOMBRE_MAX: 200,
+	CODIGO_BARRAS_MAX: 50
+} as const;

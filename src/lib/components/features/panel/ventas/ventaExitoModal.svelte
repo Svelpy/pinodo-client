@@ -45,10 +45,16 @@
 			<p class="mt-3 text-3xl font-bold text-light-two tabular-nums dark:text-dark-two">
 				{formatCurrency(venta.total)}
 			</p>
-			{#if venta.metodo_pago}
+			{#if venta.pagos.length === 1}
 				<p class="text-sm text-light-two_d dark:text-dark-two_d">
-					{METODO_PAGO_LABEL[venta.metodo_pago]}
+					{METODO_PAGO_LABEL[venta.pagos[0].metodo]}
 				</p>
+			{:else if venta.pagos.length > 1}
+				<ul class="mt-1 text-sm text-light-two_d tabular-nums dark:text-dark-two_d">
+					{#each venta.pagos as pago (pago.id)}
+						<li>{METODO_PAGO_LABEL[pago.metodo]} · {formatCurrency(pago.monto)}</li>
+					{/each}
+				</ul>
 			{/if}
 			{#if cobrada && cambio !== null && cambio > 0}
 				<p

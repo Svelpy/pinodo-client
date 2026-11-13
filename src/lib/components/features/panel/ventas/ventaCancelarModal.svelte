@@ -21,7 +21,7 @@
 		if (!venta) return '';
 		const nombre = `${formatVentaNumero(venta.numero)} (${formatCurrency(venta.total)})`;
 		return cobrada
-			? `¿Anular la venta ${nombre}? Las prendas vuelven al stock y la venta deja de contar en la caja. No se puede deshacer.`
+			? `¿Anular la venta ${nombre}? Las prendas vuelven al stock, los pagos se registran como devueltos y la venta deja de contar en la caja. No se puede deshacer.`
 			: `¿Cancelar el pedido ${nombre}? No se podrá cobrar ni editar después.`;
 	});
 
@@ -37,9 +37,7 @@
 		isLoading = true;
 		let done = false;
 		try {
-			const cancelada = await ventaService.cambiarEstado(target.id, {
-				estado: VENTA_ESTADO.CANCELADA
-			});
+			const cancelada = await ventaService.cancelar(target.id);
 			alert(
 				'success',
 				eraCobrada

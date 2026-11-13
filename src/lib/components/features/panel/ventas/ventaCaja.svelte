@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { AlertBox, Sheet } from '#lib/components/ui/index.ts';
-	import { METODO_PAGO, VENTA_CANAL, VENTA_ESTADO } from '#lib/constants/index.ts';
+	import { METODO_PAGO, VENTA_CANAL } from '#lib/constants/index.ts';
 	import { ShoppingCartIcon } from '#lib/icons/outline/index.ts';
 	import type {
 		CajaAviso,
@@ -22,10 +22,11 @@
 		guardarBorradorVenta,
 		hayPreciosDistintos,
 		leerBorradorVenta,
+		nuevoPago,
 		parseMonto,
 		sincronizarLineas,
 		toItemsRequest,
-		validateSchema
+		validateSchemaDeep
 	} from '#lib/utils/index.ts';
 	import { createVentaCheckoutSchema } from '#lib/zod/index.ts';
 	import VentaBuscador from './ventaBuscador.svelte';
@@ -52,12 +53,26 @@
 
 	const checkoutInicial = (base?: VentaDetalle | null): VentaCheckoutValues => ({
 		canal: base?.canal ?? VENTA_CANAL.TIENDA,
-		metodo_pago: base?.metodo_pago ?? null,
 		referencia: base?.referencia ?? '',
 		cliente_telefono: base?.cliente_telefono ?? '',
 		descuento: base?.descuento ? String(base.descuento) : '',
-		nota: base?.nota ?? ''
+		nota: base?.nota ?? '',
+		pagos: [nuevoPago()]
 	});
+
+	// Un borrador de antes de los pagos mixtos trae `metodo_pago` y no `pagos`: se queda solo con lo
+	// que sigue existiendo
+	function restaurarCheckout(guardado: Partial<VentaCheckoutValues>): VentaCheckoutValues {
+		const base = checkoutInicial();
+		return {
+			canal: guardado.canal ?? base.canal,
+			referencia: guardado.referencia ?? base.referencia,
+			cliente_telefono: guardado.cliente_telefono ?? base.cliente_telefono,
+			descuento: guardado.descuento ?? base.descuento,
+			nota: guardado.nota ?? base.nota,
+			pagos: Array.isArray(guardado.pagos) && guardado.pagos.length ? guardado.pagos : base.pagos
+		};
+	}
 
 	// ── Carrito ───────────────────────────────────────────────────────────────────────────────
 	// svelte-ignore state_referenced_locally
@@ -162,8 +177,8 @@
 	async function submit(accion: CarritoAccion) {
 		if (submitting || lineas.length === 0) return;
 		const cobrar = accion === 'cobrar';
-		const result = validateSchema(
-			createVentaCheckoutSchema({ cobrar, subtotal: totales.subtotal }),
+		const result = validateSchemaDeep(
+			createVentaCheckoutSchema({ cobrar, subtotal: totales.subtotal, total: totales.total }),
 			$state.snapshot(checkout)
 		);
 		if (!result.success) {
@@ -175,19 +190,18 @@
 		submitError = '';
 		submitting = accion;
 		const items = toItemsRequest(lineas);
+		// Con un solo pago, su monto es el total y no se escribe
+		const pagoUnico = checkout.pagos.length === 1;
 		const cambio =
-			cobrar && checkout.metodo_pago === METODO_PAGO.EFECTIVO
+			cobrar && pagoUnico && checkout.pagos[0].metodo === METODO_PAGO.EFECTIVO
 				? calcularCambio(totales.total, pagaCon)
 				: null;
 		let guardadoSinCobrar: VentaDetalle | null = null;
 
 		try {
 			if (!venta) {
-				const creada = await ventaService.create({
-					...result.data,
-					estado: cobrar ? VENTA_ESTADO.CONFIRMADA : VENTA_ESTADO.PENDIENTE,
-					items
-				});
+				// Con pagos queda cobrada (CONFIRMADA); sin pagos, pedido pendiente
+				const creada = await ventaService.create({ ...result.data, items });
 				borrarBorradorVenta();
 				reset();
 				carritoAbierto = false;
@@ -198,22 +212,24 @@
 				return;
 			}
 
+			const { pagos, ...datos } = result.data;
 			let actualizada = await ventaService.replaceItems(venta.id, {
-				...result.data,
+				...datos,
 				items,
 				recalcular_precios: recalcular
 			});
 			if (cobrar) {
 				guardadoSinCobrar = actualizada;
-				actualizada = await ventaService.cambiarEstado(venta.id, {
-					estado: VENTA_ESTADO.CONFIRMADA
+				// Un pago único cubre el total que calculó la API, por si difiere en algún céntimo
+				actualizada = await ventaService.confirmar(venta.id, {
+					pagos: pagoUnico ? [{ ...pagos[0], monto: actualizada.total }] : pagos
 				});
 			}
 			onGuardado?.(actualizada, cobrar);
 		} catch (error) {
 			const fieldErrors = errorService.getFieldErrors(error);
 			erroresCheckout = Object.fromEntries(
-				Object.entries(fieldErrors).filter(([field]) => field in checkout)
+				Object.entries(fieldErrors).filter(([field]) => field.split('.')[0] in checkout)
 			);
 			const message = errorService.getMessage(error);
 			submitError = guardadoSinCobrar
@@ -268,7 +284,7 @@
 			const borrador = leerBorradorVenta();
 			if (borrador) {
 				lineas = borrador.lineas;
-				checkout = { ...checkoutInicial(), ...borrador.checkout };
+				checkout = restaurarCheckout(borrador.checkout);
 				borradorRecuperado = borrador.guardado_at;
 			}
 			borradorListo = true;

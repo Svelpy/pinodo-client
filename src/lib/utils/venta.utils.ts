@@ -1,5 +1,6 @@
 import { Action, Module, type Role } from '#lib/config/permissions.config.ts';
 import {
+	METODO_PAGO,
 	METODO_PAGO_LABEL,
 	RANGO_FECHA,
 	VENTA_BORRADOR_KEY,
@@ -11,11 +12,14 @@ import {
 import type {
 	CarritoLinea,
 	ListVentasParams,
+	PagoLinea,
 	SkuInventario,
 	VentaBorrador,
 	VentaDetalle,
 	VentaFiltros,
-	VentaItemRequest
+	VentaItemRequest,
+	VentaPago,
+	VentaResumen
 } from '#lib/interfaces/index.ts';
 import { todayISO } from './date';
 import { formatCurrency, formatVentaNumero } from './format';
@@ -23,7 +27,7 @@ import { can } from './rbac.utils';
 
 // ── Permisos ──────────────────────────────────────────────────────────────────────────────────
 // Espejo del backend: registrar es VENTA:CREATE; editar, cobrar y cancelar un pedido pendiente
-// (PUT de ítems y PATCH de estado) es VENTA:UPDATE; anular una venta ya cobrada (devuelve el stock)
+// (PUT de ítems, /confirmar y /cancelar) es VENTA:UPDATE; anular una venta ya cobrada (devuelve el stock)
 // exige VENTA:DELETE. Hoy: OWNER y ADMIN todo; el CAJERO no anula cobradas; SUPERADMIN solo consulta.
 
 export function puedeRegistrarVenta(role: Role | null): boolean {
@@ -120,6 +124,61 @@ export function calcularCambio(total: number, pagaCon: string): number | null {
 	const monto = parseMonto(pagaCon);
 	if (monto === null || monto === 0 || toCents(monto) < toCents(total)) return null;
 	return fromCents(toCents(monto) - toCents(total));
+}
+
+// ── Pagos ─────────────────────────────────────────────────────────────────────────────────────
+
+/** Métodos usados en los pagos, sin repetir y en orden de aparición: "QR + Efectivo" */
+export function metodosPagoTexto(pagos: readonly Pick<VentaPago, 'metodo'>[]): string | null {
+	const metodos = [...new Set(pagos.map((pago) => pago.metodo))];
+	return metodos.length ? metodos.map((metodo) => METODO_PAGO_LABEL[metodo]).join(' + ') : null;
+}
+
+export interface CobroPorMetodo {
+	metodo: MetodoPago;
+	monto: number;
+	/** Proporción sobre el total cobrado (0–1) */
+	parte: number;
+}
+
+/** Desglose de lo cobrado por método, de mayor a menor y sin los métodos en cero */
+export function desgloseCobrado(confirmada: VentaResumen['confirmada']): CobroPorMetodo[] {
+	const total = confirmada.total;
+	return Object.values(METODO_PAGO)
+		.map((metodo) => {
+			const monto = confirmada[metodo.toLowerCase() as Lowercase<MetodoPago>] ?? 0;
+			return { metodo, monto, parte: total > 0 ? monto / total : 0 };
+		})
+		.filter((item) => item.monto > 0)
+		.sort((a, b) => b.monto - a.monto);
+}
+
+// ── Pagos de la caja ──────────────────────────────────────────────────────────────────────────
+
+/** Pago vacío de la caja (el id solo identifica la fila en la lista) */
+export function nuevoPago(metodo: MetodoPago | null = null, monto = ''): PagoLinea {
+	const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+	return { id, metodo, monto, referencia: '' };
+}
+
+export interface EstadoPagos {
+	/** Suma de los montos escritos (los inválidos cuentan 0) */
+	asignado: number;
+	/** Lo que falta para llegar al total (0 si ya se cubrió) */
+	falta: number;
+	/** Lo que se pasa del total (0 si no) */
+	sobra: number;
+}
+
+/** Cuánto suman los pagos de un cobro dividido frente al total */
+export function estadoPagos(pagos: readonly PagoLinea[], total: number): EstadoPagos {
+	const asignado = pagos.reduce((sum, pago) => sum + toCents(parseMonto(pago.monto) ?? 0), 0);
+	const diferencia = toCents(total) - asignado;
+	return {
+		asignado: fromCents(asignado),
+		falta: fromCents(Math.max(0, diferencia)),
+		sobra: fromCents(Math.max(0, -diferencia))
+	};
 }
 
 // ── Carrito ───────────────────────────────────────────────────────────────────────────────────
@@ -387,6 +446,7 @@ export function normalizarTelefonoWhatsapp(telefono: string | null | undefined):
 /** Texto del pedido para enviarlo al cliente por WhatsApp */
 export function mensajeWhatsappVenta(venta: VentaDetalle, tiendaNombre?: string | null): string {
 	const esPedido = venta.estado === VENTA_ESTADO.PENDIENTE;
+	const metodos = metodosPagoTexto(venta.pagos);
 	const lineas = [
 		tiendaNombre ? `*${tiendaNombre}*` : null,
 		`${esPedido ? 'Pedido' : 'Venta'} ${formatVentaNumero(venta.numero)}`,
@@ -400,7 +460,7 @@ export function mensajeWhatsappVenta(venta: VentaDetalle, tiendaNombre?: string 
 		venta.descuento > 0 ? `Subtotal: ${formatCurrency(venta.subtotal)}` : null,
 		venta.descuento > 0 ? `Descuento: −${formatCurrency(venta.descuento)}` : null,
 		`*Total: ${formatCurrency(venta.total)}*`,
-		venta.metodo_pago ? `Pago: ${METODO_PAGO_LABEL[venta.metodo_pago as MetodoPago]}` : null,
+		metodos ? `Pago: ${metodos}` : null,
 		venta.nota ? `Nota: ${venta.nota}` : null,
 		'',
 		esPedido ? '¡Gracias por tu pedido!' : '¡Gracias por tu compra!'

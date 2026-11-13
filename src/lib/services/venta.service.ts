@@ -1,6 +1,6 @@
 import { apiPinodo } from '#lib/config/index.ts';
 import type {
-	CambiarEstadoVentaRequest,
+	ConfirmarVentaRequest,
 	CreateVentaRequest,
 	ListVentasParams,
 	ReplaceVentaItemsRequest,
@@ -43,7 +43,10 @@ class VentaService {
 		return apiPinodo.get<VentaDetalle>(`/ventas/${id}`, { requireAuth: true });
 	}
 
-	/** Registra la venta; con `estado: CONFIRMADA` la cobra y descuenta el stock (409 si no alcanza) */
+	/**
+	 * Registra la venta. Sin pagos queda PENDIENTE; con pagos (que deben sumar exactamente el total)
+	 * queda CONFIRMADA y descuenta el stock. 409 si no alcanza el stock o los pagos no suman el total.
+	 */
 	async create(data: CreateVentaRequest): Promise<VentaDetalle> {
 		return apiPinodo.post<VentaDetalle>('/ventas/', data, { requireAuth: true });
 	}
@@ -57,15 +60,23 @@ class VentaService {
 	}
 
 	/**
-	 * Cobra (CONFIRMADA: descuenta stock, 409 si no alcanza) o cancela (CANCELADA: si estaba cobrada
-	 * devuelve el stock). `recalcular_precios` solo se envía al confirmar.
+	 * Cobra un pedido PENDIENTE y descuenta el stock. Los pagos deben sumar exactamente el total
+	 * (con `recalcular_precios`, el de hoy). 409 si no suman, no alcanza el stock o ya no está pendiente.
 	 */
-	async cambiarEstado(id: string, data: CambiarEstadoVentaRequest): Promise<VentaDetalle> {
-		const body =
-			data.estado === 'CONFIRMADA' && data.recalcular_precios
-				? { estado: data.estado, recalcular_precios: true }
-				: { estado: data.estado };
-		return apiPinodo.patch<VentaDetalle>(`/ventas/${id}/estado`, body, { requireAuth: true });
+	async confirmar(
+		id: string,
+		{ pagos, recalcular_precios }: ConfirmarVentaRequest
+	): Promise<VentaDetalle> {
+		const body = recalcular_precios ? { pagos, recalcular_precios: true } : { pagos };
+		return apiPinodo.post<VentaDetalle>(`/ventas/${id}/confirmar`, body, { requireAuth: true });
+	}
+
+	/**
+	 * Anula la venta. Si estaba cobrada devuelve el stock y los pagos (exige permiso para anular
+	 * cobradas). 409 si ya estaba cancelada.
+	 */
+	async cancelar(id: string): Promise<VentaDetalle> {
+		return apiPinodo.post<VentaDetalle>(`/ventas/${id}/cancelar`, undefined, { requireAuth: true });
 	}
 }
 

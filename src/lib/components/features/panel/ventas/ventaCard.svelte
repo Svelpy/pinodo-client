@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { METODO_PAGO_LABEL, VENTA_ESTADO } from '#lib/constants/index.ts';
+	import { VENTA_ESTADO } from '#lib/constants/index.ts';
 	import type { Venta } from '#lib/interfaces/index.ts';
 	import { formatCurrency, formatDateTime, formatVentaNumero } from '#lib/utils/index.ts';
 	import VentaActions from './ventaActions.svelte';
@@ -43,13 +43,8 @@
 					: ''}{venta.cliente_telefono ?? ''}
 			</p>
 		{/if}
-		<div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+		<div class="mt-2 text-sm">
 			<VentaCanal canal={venta.canal} />
-			{#if venta.metodo_pago}
-				<span class="text-light-two_d dark:text-dark-two_d">
-					{METODO_PAGO_LABEL[venta.metodo_pago]}
-				</span>
-			{/if}
 		</div>
 	</div>
 	<div class="flex shrink-0 flex-col items-end justify-between">

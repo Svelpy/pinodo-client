@@ -272,3 +272,15 @@ export function formatVentaNumero(value: number | null | undefined, options?: Ba
 	if (isNullish(value)) return fallback;
 	return `#${String(value).padStart(6, '0')}`;
 }
+
+/** Cantidad con su signo, p. ej. en un movimiento de stock (5 → "+5", -2 → "−2", 0 → "0") */
+export function formatSignedNumber(
+	value: number | null | undefined,
+	options?: BaseOptions
+): string {
+	const fallback = options?.fallback ?? NO_DATA_LABEL;
+	if (isNullish(value) || Number.isNaN(value)) return fallback;
+	const text = new Intl.NumberFormat('es-ES').format(Math.abs(value));
+	if (value > 0) return `+${text}`;
+	return value < 0 ? `−${text}` : text;
+}

@@ -40,7 +40,8 @@ export const ROLE_ACCESS: Record<Role, RoleAccess> = {
 	[Role.ADMIN]: { home: '/panel', routes: ['/panel'] },
 	[Role.CAJERO]: {
 		home: '/panel/ventas',
-		// '/panel/ventas' incluye el historial, el detalle y la edición de pedidos
-		routes: ['/panel/ventas', '/panel/perfil']
+		// '/panel/ventas' incluye el historial, el detalle y la edición de pedidos;
+		// '/panel/kardex', el valor del stock
+		routes: ['/panel/ventas', '/panel/kardex', '/panel/perfil']
 	}
 };

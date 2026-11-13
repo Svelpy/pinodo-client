@@ -15,3 +15,4 @@ export * from './tienda.service';
 export * from './usuario.service';
 export * from './venta.service';
 export * from './tiendaPublica.service';
+export * from './kardex.service';

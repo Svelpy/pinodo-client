@@ -1,5 +1,6 @@
 import { resolve } from '$app/paths';
 import {
+	ArrowsLeftRightIcon,
 	BuildindStoreIcon,
 	FileDescriptionIcon,
 	HomeDotIcon,
@@ -58,6 +59,13 @@ export const PANEL_NAVIGATION: NavSection[] = [
 					{ id: 'colores', label: 'Colores', route: '/panel/productos/colores' },
 					{ id: 'tallas', label: 'Tallas', route: '/panel/productos/tallas' }
 				]
+			}),
+			navItem({
+				id: 'kardex',
+				label: 'Kardex',
+				route: '/panel/kardex',
+				icon: ArrowsLeftRightIcon,
+				children: [{ id: 'costos', label: 'Valor del stock', route: '/panel/kardex/costos' }]
 			}),
 			navItem({
 				id: 'secciones',

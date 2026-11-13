@@ -18,6 +18,8 @@
 		disabled?: boolean;
 		error?: string;
 		size?: 'md' | 'lg';
+		/** Columnas de la cuadrícula; por defecto, todas las opciones en una fila */
+		columns?: number;
 		class?: string;
 	}
 
@@ -30,6 +32,7 @@
 		disabled = false,
 		error,
 		size = 'md',
+		columns,
 		class: className
 	}: Props = $props();
 
@@ -79,7 +82,7 @@
 				? 'border-light-error dark:border-dark-error'
 				: 'border-light-one_d dark:border-dark-one_d'
 		)}
-		style:grid-template-columns="repeat({options.length}, minmax(0, 1fr))"
+		style:grid-template-columns="repeat({columns ?? options.length}, minmax(0, 1fr))"
 	>
 		{#each options as option, index (option.value)}
 			{@const selected = option.value === value}

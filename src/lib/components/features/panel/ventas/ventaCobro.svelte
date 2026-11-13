@@ -1,24 +1,9 @@
 <script lang="ts">
-	import { AlertBox, Button, Input, SegmentedControl, TextArea } from '#lib/components/ui/index.ts';
-	import {
-		METODO_PAGO,
-		METODO_PAGO_LABEL,
-		VENTA_CANAL,
-		VENTA_CANAL_LABEL,
-		type MetodoPago,
-		type VentaCanal
-	} from '#lib/constants/index.ts';
-	import {
-		BuildindStoreIcon,
-		CreditCardIcon,
-		ScanBarcodeIcon,
-		UserIcon,
-		WalletIcon,
-		WhatsappIcon
-	} from '#lib/icons/outline/index.ts';
+	import { AlertBox, Button, Input, SegmentedPicker, TextArea } from '#lib/components/ui/index.ts';
+	import { VENTA_CANAL, type VentaCanal } from '#lib/constants/index.ts';
+	import { UserIcon } from '#lib/icons/outline/index.ts';
 	import type { CarritoAccion, CarritoLinea, VentaCheckoutValues } from '#lib/interfaces/index.ts';
 	import {
-		calcularCambio,
 		calcularTotales,
 		formatCurrency,
 		parseMonto,
@@ -26,6 +11,8 @@
 		validarLinea
 	} from '#lib/utils/index.ts';
 	import { VENTA_LIMITS } from '#lib/zod/index.ts';
+	import { CANAL_OPCIONES, esCanalADistancia } from './ventaOpciones.ts';
+	import VentaPagos from './ventaPagos.svelte';
 
 	interface Props {
 		lineas: CarritoLinea[];
@@ -38,7 +25,7 @@
 		recalcular?: boolean;
 		/** Edición: hay precios distintos a los ofrecidos y se puede elegir */
 		mostrarRecalcular?: boolean;
-		/** Errores de los datos del cobro por campo */
+		/** Errores de los datos del cobro, con la ruta completa (`descuento`, `pagos.0.monto`) */
 		errores?: Record<string, string>;
 		/** Error de la API al guardar */
 		submitError?: string;
@@ -65,20 +52,6 @@
 
 	const id = $props.id();
 
-	const CANAL_OPTIONS = [
-		{ value: VENTA_CANAL.TIENDA, label: VENTA_CANAL_LABEL.TIENDA, icon: BuildindStoreIcon },
-		{ value: VENTA_CANAL.WHATSAPP, label: VENTA_CANAL_LABEL.WHATSAPP, icon: WhatsappIcon }
-	];
-	const METODO_OPTIONS = [
-		{ value: METODO_PAGO.EFECTIVO, label: METODO_PAGO_LABEL.EFECTIVO, icon: WalletIcon },
-		{ value: METODO_PAGO.QR, label: METODO_PAGO_LABEL.QR, icon: ScanBarcodeIcon },
-		{
-			value: METODO_PAGO.TRANSFERENCIA,
-			label: METODO_PAGO_LABEL.TRANSFERENCIA,
-			icon: CreditCardIcon
-		}
-	];
-
 	const descuentoGlobal = $derived(parseMonto(checkout.descuento) ?? 0);
 	const totales = $derived(calcularTotales(lineas, descuentoGlobal, recalcular));
 	const lineasConError = $derived(
@@ -87,16 +60,14 @@
 	const vacio = $derived(lineas.length === 0);
 	const bloqueado = $derived(vacio || lineasConError > 0 || submitting !== null);
 	const esWhatsapp = $derived(checkout.canal === VENTA_CANAL.WHATSAPP);
-	// En mostrador lo normal es cobrar; un pedido de WhatsApp se guarda hasta que pague
-	const cobrarPrincipal = $derived(puedeCobrar && (modo === 'edicion' || !esWhatsapp));
-	const cambio = $derived(
-		checkout.metodo_pago === METODO_PAGO.EFECTIVO ? calcularCambio(totales.total, pagaCon) : null
-	);
+	const aDistancia = $derived(esCanalADistancia(checkout.canal));
+	// En mostrador lo normal es cobrar; un pedido a distancia (WhatsApp, redes…) se guarda hasta que pague
+	const cobrarPrincipal = $derived(puedeCobrar && (modo === 'edicion' || !aDistancia));
 
 	let clienteAbierto = $state(false);
 	let extrasAbierto = $state(false);
 	const mostrarCliente = $derived(
-		esWhatsapp || clienteAbierto || !!checkout.referencia || !!checkout.cliente_telefono
+		aDistancia || clienteAbierto || !!checkout.referencia || !!checkout.cliente_telefono
 	);
 	const mostrarExtras = $derived(
 		extrasAbierto || !!checkout.descuento || !!checkout.nota || !!errores.descuento
@@ -123,9 +94,11 @@
 	<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 		<!-- Datos del cobro -->
 		<div class="space-y-4 px-3 py-4 sm:px-4">
-			<SegmentedControl
+			<SegmentedPicker
 				label="Canal"
-				options={CANAL_OPTIONS}
+				options={CANAL_OPCIONES.frecuentes}
+				more={CANAL_OPCIONES.mas}
+				moreLabel="Más canales"
 				value={checkout.canal}
 				onChange={(canal: VentaCanal) => (checkout.canal = canal)}
 				disabled={submitting !== null}
@@ -136,7 +109,7 @@
 				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
 					<Input
 						id="{id}-referencia"
-						label={esWhatsapp ? 'Cliente' : 'Cliente (opcional)'}
+						label={aDistancia ? 'Cliente' : 'Cliente (opcional)'}
 						placeholder="Nombre o referencia"
 						autocomplete="off"
 						maxlength={VENTA_LIMITS.REFERENCIA_MAX}
@@ -148,7 +121,11 @@
 						id="{id}-telefono"
 						type="tel"
 						inputmode="tel"
-						label={esWhatsapp ? 'WhatsApp del cliente' : 'Teléfono (opcional)'}
+						label={esWhatsapp
+							? 'WhatsApp del cliente'
+							: aDistancia
+								? 'Teléfono del cliente'
+								: 'Teléfono (opcional)'}
 						placeholder="71234567"
 						autocomplete="off"
 						maxlength={VENTA_LIMITS.TELEFONO_MAX}
@@ -164,40 +141,15 @@
 				</button>
 			{/if}
 
-			<SegmentedControl
-				label={puedeCobrar && !esWhatsapp
-					? 'Método de pago'
-					: 'Método de pago (opcional en pedidos)'}
-				options={METODO_OPTIONS}
-				value={checkout.metodo_pago}
-				onChange={(metodo: MetodoPago) => (checkout.metodo_pago = metodo)}
-				disabled={submitting !== null}
-				error={errores.metodo_pago}
-			/>
-
-			{#if checkout.metodo_pago === METODO_PAGO.EFECTIVO && puedeCobrar}
-				<div class="flex items-end gap-3">
-					<Input
-						id="{id}-paga-con"
-						label="Paga con (Bs)"
-						inputmode="decimal"
-						placeholder="0,00"
-						autocomplete="off"
-						bind:value={pagaCon}
-						class="w-36"
-						disabled={submitting !== null}
-					/>
-					<p class="pb-2.5 text-sm text-light-two_d dark:text-dark-two_d" aria-live="polite">
-						{#if cambio !== null}
-							Cambio:
-							<span class="text-base font-semibold text-light-two dark:text-dark-two">
-								{formatCurrency(cambio)}
-							</span>
-						{:else if pagaCon.trim()}
-							<span class="text-light-error dark:text-dark-error">Monto insuficiente</span>
-						{/if}
-					</p>
-				</div>
+			{#if puedeCobrar}
+				<VentaPagos
+					bind:pagos={checkout.pagos}
+					bind:pagaCon
+					total={totales.total}
+					{errores}
+					label={cobrarPrincipal ? 'Método de pago' : 'Método de pago (solo si cobras ahora)'}
+					disabled={submitting !== null}
+				/>
 			{/if}
 
 			{#if mostrarExtras}

@@ -50,10 +50,7 @@
 	const isInitialLoading = $derived(isLoading && !hasData);
 </script>
 
-<section
-	aria-busy={isLoading}
-	class="overflow-hidden border border-light-one_d bg-light-one dark:border-dark-one_d dark:bg-dark-one"
->
+<section aria-busy={isLoading} class=" bg-light-one dark:border-dark-one_d dark:bg-dark-one">
 	{#if error && !hasData}
 		<EmptyState
 			icon={AlertTriangleIcon}
@@ -97,7 +94,7 @@
 
 		<div class={['transition-opacity', isLoading && 'pointer-events-none opacity-60']}>
 			<!-- Móvil y tablet pequeña: tarjetas -->
-			<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden">
+			<div class="grid gap-3 sm:grid-cols-2 md:hidden">
 				{#each productos as producto (producto.id)}
 					<ProductoCard {producto} {onToggleVisible} {onDelete} />
 				{/each}

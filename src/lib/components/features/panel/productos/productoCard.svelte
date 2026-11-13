@@ -34,7 +34,7 @@
 		class="size-16"
 	/>
 	<div class="min-w-0 flex-1">
-		<h3 class="truncate font-semibold text-light-two dark:text-dark-two">
+		<h3 class="font-semibold break-normal text-light-two dark:text-dark-two">
 			<a href={resolve('/panel/productos/[id]', { id: producto.id })} class="hover:underline">
 				{producto.nombre}
 			</a>

@@ -48,14 +48,13 @@ describe('ventaService', () => {
 		expect(api.get).toHaveBeenCalledWith('/ventas/v1', AUTH);
 
 		const body = {
-			estado: 'CONFIRMADA' as const,
 			canal: 'TIENDA' as const,
-			metodo_pago: 'EFECTIVO' as const,
 			referencia: null,
 			cliente_telefono: null,
 			descuento: 0,
 			nota: null,
-			items: [{ sku_id: 's1', cantidad: 2, descuento_unitario: 0 }]
+			items: [{ sku_id: 's1', cantidad: 2, descuento_unitario: 0 }],
+			pagos: [{ metodo: 'EFECTIVO' as const, monto: 59.9 }]
 		};
 		await ventaService.create(body);
 		expect(api.post).toHaveBeenCalledWith('/ventas/', body, AUTH);
@@ -65,18 +64,24 @@ describe('ventaService', () => {
 		expect(api.put).toHaveBeenCalledWith('/ventas/v1/items', items, AUTH);
 	});
 
-	it('cambiarEstado envía recalcular_precios solo al confirmar con true', async () => {
-		await ventaService.cambiarEstado('v1', { estado: 'CONFIRMADA', recalcular_precios: true });
-		expect(api.patch).toHaveBeenLastCalledWith(
-			'/ventas/v1/estado',
-			{ estado: 'CONFIRMADA', recalcular_precios: true },
+	it('confirmar envía los pagos y recalcular_precios solo si es true', async () => {
+		const pagos = [
+			{ metodo: 'EFECTIVO' as const, monto: 40 },
+			{ metodo: 'QR' as const, monto: 20, referencia: '0048219' }
+		];
+		await ventaService.confirmar('v1', { pagos, recalcular_precios: true });
+		expect(api.post).toHaveBeenLastCalledWith(
+			'/ventas/v1/confirmar',
+			{ pagos, recalcular_precios: true },
 			AUTH
 		);
 
-		await ventaService.cambiarEstado('v1', { estado: 'CONFIRMADA', recalcular_precios: false });
-		expect(api.patch).toHaveBeenLastCalledWith('/ventas/v1/estado', { estado: 'CONFIRMADA' }, AUTH);
+		await ventaService.confirmar('v1', { pagos, recalcular_precios: false });
+		expect(api.post).toHaveBeenLastCalledWith('/ventas/v1/confirmar', { pagos }, AUTH);
+	});
 
-		await ventaService.cambiarEstado('v1', { estado: 'CANCELADA' });
-		expect(api.patch).toHaveBeenLastCalledWith('/ventas/v1/estado', { estado: 'CANCELADA' }, AUTH);
+	it('cancelar no envía cuerpo', async () => {
+		await ventaService.cancelar('v1');
+		expect(api.post).toHaveBeenLastCalledWith('/ventas/v1/cancelar', undefined, AUTH);
 	});
 });

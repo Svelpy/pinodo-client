@@ -14,6 +14,7 @@ export { default as VentaEstadoBadge } from './ventaEstadoBadge.svelte';
 export { default as VentaExitoModal } from './ventaExitoModal.svelte';
 export { default as VentaFilters } from './ventaFilters.svelte';
 export { default as VentaList } from './ventaList.svelte';
+export { default as VentaPagos } from './ventaPagos.svelte';
 export { default as VentaResumen } from './ventaResumen.svelte';
 export { default as VentaRow } from './ventaRow.svelte';
 export { default as VentaScannerModal } from './ventaScannerModal.svelte';

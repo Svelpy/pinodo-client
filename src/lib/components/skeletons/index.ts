@@ -11,3 +11,5 @@ export { default as VentaListSkeleton } from './ventaListSkeleton.svelte';
 export { default as VentaDetalleSkeleton } from './ventaDetalleSkeleton.svelte';
 export { default as NegocioFormSkeleton } from './negocioFormSkeleton.svelte';
 export { default as PerfilSkeleton } from './perfilSkeleton.svelte';
+export { default as KardexListSkeleton } from './kardexListSkeleton.svelte';
+export { default as KardexCostoListSkeleton } from './kardexCostoListSkeleton.svelte';

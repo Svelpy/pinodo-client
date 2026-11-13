@@ -23,8 +23,7 @@
 				<TableHead class="{headClass} w-28">N.º</TableHead>
 				<TableHead class="{headClass} w-44">Fecha</TableHead>
 				<TableHead class={headClass}>Cliente</TableHead>
-				<TableHead class="{headClass} hidden w-32 lg:table-cell">Canal</TableHead>
-				<TableHead class="{headClass} hidden w-32 lg:table-cell">Pago</TableHead>
+				<TableHead class="{headClass} hidden w-36 lg:table-cell">Canal</TableHead>
 				{#if vendedores}
 					<TableHead class="{headClass} hidden w-40 xl:table-cell">Vendedor</TableHead>
 				{/if}

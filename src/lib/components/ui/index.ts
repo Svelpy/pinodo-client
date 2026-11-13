@@ -33,4 +33,5 @@ export { default as Tabs } from './tabs.svelte';
 export { default as Sheet } from './sheet.svelte';
 export { default as StatTile } from './statTile.svelte';
 export { default as SegmentedControl } from './segmentedControl.svelte';
+export { default as SegmentedPicker } from './segmentedPicker.svelte';
 export { default as FormSection } from './formSection.svelte';

@@ -31,7 +31,6 @@ export interface Venta {
 	numero: number;
 	estado: VentaEstado;
 	canal: VentaCanal;
-	metodo_pago: MetodoPago | null;
 	/** Nombre del cliente u otra referencia libre */
 	referencia: string | null;
 	cliente_telefono: string | null;
@@ -40,6 +39,11 @@ export interface Venta {
 	/** Descuento global de la venta */
 	descuento: number;
 	total: number;
+	/**
+	 * Suma de los pagos: 0 en un pedido pendiente, el total en una venta cobrada y, al anular una
+	 * venta cobrada, lo que se devolvió
+	 */
+	total_pagado: number;
 	nota: string | null;
 	confirmada_at: string | null;
 	cancelada_at: string | null;
@@ -49,9 +53,27 @@ export interface Venta {
 	updated_at: string;
 }
 
-/** Venta con sus ítems (`GET /ventas/{id}` y respuesta de crear, editar y cambiar estado) */
+/** Pago de una venta: una venta puede cobrarse con varios métodos */
+export interface VentaPago {
+	id: string;
+	venta_id: string;
+	metodo: MetodoPago;
+	monto: number;
+	/** N.º de operación, recibo… */
+	referencia: string | null;
+	/** Foto del comprobante (QR, transferencia…) */
+	comprobante_url: string | null;
+	created_at: string;
+	created_by: string;
+	updated_at: string;
+}
+
+/**
+ * Venta con sus ítems y pagos (`GET /ventas/{id}` y respuesta de crear, editar y cambiar estado)
+ */
 export interface VentaDetalle extends Venta {
 	items: VentaItem[];
+	pagos: VentaPago[];
 }
 
 /**
@@ -59,12 +81,8 @@ export interface VentaDetalle extends Venta {
  * método de pago para mostrar siempre el desglose completo.
  */
 export interface VentaResumen {
-	confirmada: {
-		efectivo: number;
-		qr: number;
-		transferencia: number;
-		total: number;
-	};
+	/** Lo cobrado en las confirmadas, por método de pago, y su total */
+	confirmada: Record<Lowercase<MetodoPago>, number> & { total: number };
 	pendiente: number;
 	cancelada: number;
 }
@@ -91,19 +109,28 @@ export interface VentaItemRequest {
 	descuento_unitario: number;
 }
 
+/** Un pago al registrar o confirmar una venta */
+export interface VentaPagoRequest {
+	metodo: MetodoPago;
+	monto: number;
+	/** N.º de operación, recibo…; se omite si no hay */
+	referencia?: string;
+}
+
 /**
- * `POST /ventas/`: los precios y nombres se copian del SKU con la rebaja vigente hoy. PENDIENTE
- * (por defecto) es un pedido sin cobrar; CONFIRMADA lo cobra y descuenta el stock (409 si no alcanza).
+ * `POST /ventas/`: los precios y nombres se copian del SKU con la rebaja vigente hoy. El estado lo
+ * deciden los pagos: sin pagos queda PENDIENTE (pedido sin cobrar, no toca el stock); con pagos
+ * (pueden ser mixtos) queda CONFIRMADA y descuenta el stock. Los pagos deben sumar exactamente el
+ * total, no hay anticipos: 409 si no, o si no alcanza el stock.
  */
 export interface CreateVentaRequest {
-	estado: Exclude<VentaEstado, 'CANCELADA'>;
 	canal: VentaCanal;
-	metodo_pago: MetodoPago | null;
 	referencia: string | null;
 	cliente_telefono: string | null;
 	descuento: number;
 	nota: string | null;
 	items: VentaItemRequest[];
+	pagos: VentaPagoRequest[];
 }
 
 /**
@@ -112,7 +139,6 @@ export interface CreateVentaRequest {
  */
 export interface ReplaceVentaItemsRequest {
 	canal?: VentaCanal;
-	metodo_pago?: MetodoPago | null;
 	referencia?: string | null;
 	cliente_telefono?: string | null;
 	descuento?: number;
@@ -121,9 +147,14 @@ export interface ReplaceVentaItemsRequest {
 	recalcular_precios?: boolean;
 }
 
-/** `PATCH /ventas/{id}/estado`: `recalcular_precios` solo se envía al confirmar */
-export type CambiarEstadoVentaRequest =
-	{ estado: 'CONFIRMADA'; recalcular_precios?: boolean } | { estado: 'CANCELADA' };
+/**
+ * `POST /ventas/{id}/confirmar` (solo PENDIENTE): cobra y descuenta el stock. Los pagos deben sumar
+ * exactamente el total; con `recalcular_precios`, el total nuevo con los precios de hoy.
+ */
+export interface ConfirmarVentaRequest {
+	pagos: VentaPagoRequest[];
+	recalcular_precios?: boolean;
+}
 
 // ── Inventario de SKUs (`GET /skus/inventario`) ───────────────────────────────────────────────
 
@@ -186,14 +217,25 @@ export interface CarritoLinea {
 	eliminado?: boolean;
 }
 
+/** Un pago de la caja, tal como lo escribe el usuario */
+export interface PagoLinea {
+	/** Id local, solo para identificar la fila */
+	id: string;
+	metodo: MetodoPago | null;
+	/** Con un solo pago se ignora: ese pago cubre el total */
+	monto: string;
+	referencia: string;
+}
+
 /** Datos del cobro en la caja, tal como los escribe el usuario */
 export interface VentaCheckoutValues {
 	canal: VentaCanal;
-	metodo_pago: MetodoPago | null;
 	referencia: string;
 	cliente_telefono: string;
 	descuento: string;
 	nota: string;
+	/** Solo se envían al cobrar; un pedido se guarda sin pagos */
+	pagos: PagoLinea[];
 }
 
 /** Borrador de la caja guardado en localStorage */

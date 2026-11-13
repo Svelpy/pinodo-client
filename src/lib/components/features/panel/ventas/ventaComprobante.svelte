@@ -112,12 +112,12 @@
 				<dt>TOTAL</dt>
 				<dd>{formatCurrency(venta.total)}</dd>
 			</div>
-			{#if venta.metodo_pago}
+			{#each venta.pagos as pago (pago.id)}
 				<div class="flex justify-between">
-					<dt>Pago</dt>
-					<dd>{METODO_PAGO_LABEL[venta.metodo_pago]}</dd>
+					<dt>{METODO_PAGO_LABEL[pago.metodo]}</dt>
+					<dd>{formatCurrency(pago.monto)}</dd>
 				</div>
-			{/if}
+			{/each}
 		</dl>
 
 		{#if venta.nota}

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { CarritoLinea, SkuInventario, VentaDetalle } from '#lib/interfaces/index.ts';
+import type { MetodoPago } from '#lib/constants/index.ts';
+import type {
+	CarritoLinea,
+	SkuInventario,
+	VentaDetalle,
+	VentaPago
+} from '#lib/interfaces/index.ts';
 import {
 	accionesVenta,
 	addDaysISO,
@@ -9,12 +15,16 @@ import {
 	calcularCambio,
 	calcularLinea,
 	calcularTotales,
+	desgloseCobrado,
 	esCodigoBarras,
+	estadoPagos,
 	estadoStockSku,
 	hayPreciosDistintos,
 	lineasDesdeVenta,
 	mensajeWhatsappVenta,
+	metodosPagoTexto,
 	normalizarTelefonoWhatsapp,
+	nuevoPago,
 	parseMonto,
 	rangoFechas,
 	sincronizarLineas,
@@ -22,6 +32,30 @@ import {
 	validarLinea,
 	ventaFiltrosToParams
 } from './venta.utils';
+
+function pago(metodo: MetodoPago, monto: number): VentaPago {
+	return {
+		id: `p-${metodo}-${monto}`,
+		venta_id: 'v1',
+		metodo,
+		monto,
+		referencia: null,
+		comprobante_url: null,
+		created_at: '',
+		created_by: 'u1',
+		updated_at: ''
+	};
+}
+
+const ceros = () => ({
+	efectivo: 0,
+	tarjeta: 0,
+	cheque: 0,
+	vales: 0,
+	otros: 0,
+	qr: 0,
+	transferencia: 0
+});
 
 function sku(overrides: Partial<SkuInventario> = {}): SkuInventario {
 	return {
@@ -68,12 +102,12 @@ const venta: VentaDetalle = {
 	numero: 12,
 	estado: 'PENDIENTE',
 	canal: 'WHATSAPP',
-	metodo_pago: 'QR',
 	referencia: 'María López',
 	cliente_telefono: '71234567',
 	subtotal: 84.8,
 	descuento: 4.8,
 	total: 80,
+	total_pagado: 0,
 	nota: 'Recoge el sábado',
 	confirmada_at: null,
 	cancelada_at: null,
@@ -107,7 +141,8 @@ const venta: VentaDetalle = {
 			talla_etiqueta: '42',
 			codigo_barras: null
 		}
-	]
+	],
+	pagos: []
 };
 
 describe('montos', () => {
@@ -249,10 +284,66 @@ describe('whatsapp', () => {
 		expect(texto).toContain('Pedido #000012');
 		expect(texto).toContain('2 × Camisa Oxford (Azul marino, talla M)');
 		expect(texto).toContain('Descuento');
+		expect(texto).not.toContain('Pago:');
+		expect(
+			mensajeWhatsappVenta({
+				...venta,
+				estado: 'CONFIRMADA',
+				total_pagado: 80,
+				pagos: [pago('QR', 50), pago('EFECTIVO', 30)]
+			})
+		).toContain('Pago: QR + Efectivo');
 		expect(buildWhatsappUrl(venta)).toMatch(/^https:\/\/wa\.me\/59171234567\?text=/);
 		expect(buildWhatsappUrl({ ...venta, cliente_telefono: null })).toMatch(
 			/^https:\/\/wa\.me\/\?text=/
 		);
+	});
+});
+
+describe('pagos', () => {
+	it('metodosPagoTexto junta los métodos sin repetir', () => {
+		expect(metodosPagoTexto([])).toBeNull();
+		expect(metodosPagoTexto([pago('QR', 10), pago('EFECTIVO', 5), pago('QR', 1)])).toBe(
+			'QR + Efectivo'
+		);
+	});
+
+	it('desgloseCobrado ordena de mayor a menor y omite los ceros', () => {
+		const desglose = desgloseCobrado({
+			efectivo: 800,
+			tarjeta: 120,
+			cheque: 0,
+			vales: 0,
+			otros: 0,
+			qr: 340,
+			transferencia: 0,
+			total: 1260
+		});
+		expect(desglose.map((item) => item.metodo)).toEqual(['EFECTIVO', 'QR', 'TARJETA']);
+		expect(desglose[0].parte).toBeCloseTo(800 / 1260);
+		expect(desgloseCobrado({ ...ceros(), total: 0 })).toEqual([]);
+	});
+
+	it('nuevoPago crea filas vacías con id distinto', () => {
+		const a = nuevoPago();
+		const b = nuevoPago('QR', '50');
+		expect(a).toMatchObject({ metodo: null, monto: '', referencia: '' });
+		expect(b).toMatchObject({ metodo: 'QR', monto: '50' });
+		expect(a.id).not.toBe(b.id);
+	});
+
+	it('estadoPagos calcula lo que falta o sobra en céntimos', () => {
+		const pagos = (...montos: string[]) => montos.map((monto) => nuevoPago('EFECTIVO', monto));
+		expect(estadoPagos(pagos('0,1', '0.2'), 0.3)).toEqual({ asignado: 0.3, falta: 0, sobra: 0 });
+		expect(estadoPagos(pagos('50'), 80)).toEqual({ asignado: 50, falta: 30, sobra: 0 });
+		expect(estadoPagos(pagos('50', '40'), 80)).toEqual({ asignado: 90, falta: 0, sobra: 10 });
+		// Los montos vacíos o inválidos cuentan 0
+		expect(estadoPagos(pagos('', 'abc', '-5', '1.234', '20'), 80)).toEqual({
+			asignado: 20,
+			falta: 60,
+			sobra: 0
+		});
+		expect(estadoPagos([], 0)).toEqual({ asignado: 0, falta: 0, sobra: 0 });
 	});
 });
 

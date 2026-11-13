@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { TableCell, TableRow } from '#lib/components/ui/index.ts';
-	import { METODO_PAGO_LABEL, VENTA_ESTADO } from '#lib/constants/index.ts';
+	import { VENTA_ESTADO } from '#lib/constants/index.ts';
 	import type { Venta } from '#lib/interfaces/index.ts';
 	import {
 		formatCurrency,
@@ -55,9 +55,6 @@
 	</TableCell>
 	<TableCell class="hidden px-4 py-3 text-sm lg:table-cell">
 		<VentaCanal canal={venta.canal} />
-	</TableCell>
-	<TableCell class="hidden px-4 py-3 text-sm text-light-two lg:table-cell dark:text-dark-two">
-		{venta.metodo_pago ? METODO_PAGO_LABEL[venta.metodo_pago] : formatValue(null)}
 	</TableCell>
 	{#if mostrarVendedor}
 		<TableCell

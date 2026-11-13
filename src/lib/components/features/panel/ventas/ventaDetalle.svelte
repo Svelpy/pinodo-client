@@ -8,7 +8,7 @@
 		TableRow
 	} from '#lib/components/ui/index.ts';
 	import { METODO_PAGO_LABEL, VENTA_ESTADO } from '#lib/constants/index.ts';
-	import { PhoneIcon, WhatsappIcon } from '#lib/icons/outline/index.ts';
+	import { PhoneIcon, PhotoIcon, WhatsappIcon } from '#lib/icons/outline/index.ts';
 	import type { VentaDetalle } from '#lib/interfaces/index.ts';
 	import {
 		formatCurrency,
@@ -18,6 +18,7 @@
 	} from '#lib/utils/index.ts';
 	import VentaCanal from './ventaCanal.svelte';
 	import VentaEstadoBadge from './ventaEstadoBadge.svelte';
+	import { METODO_PAGO_ICON } from './ventaIcons.ts';
 
 	interface Props {
 		venta: VentaDetalle;
@@ -30,6 +31,8 @@
 	const unidades = $derived(venta.items.reduce((sum, item) => sum + item.cantidad, 0));
 	const whatsapp = $derived(normalizarTelefonoWhatsapp(venta.cliente_telefono));
 	const cancelada = $derived(venta.estado === VENTA_ESTADO.CANCELADA);
+	// Al anular una venta cobrada, total_pagado es lo que se devolvió
+	const anulada = $derived(cancelada && !!venta.confirmada_at);
 
 	const headClass = 'h-11 text-xs tracking-wide text-light-two_d uppercase dark:text-dark-two_d';
 	const cardClass =
@@ -159,12 +162,6 @@
 			</div>
 			<dl class="space-y-2 text-sm">
 				<div class="flex justify-between gap-3">
-					<dt class={dtClass}>Método de pago</dt>
-					<dd class={ddClass}>
-						{venta.metodo_pago ? METODO_PAGO_LABEL[venta.metodo_pago] : formatValue(null)}
-					</dd>
-				</div>
-				<div class="flex justify-between gap-3">
 					<dt class={dtClass}>Cliente</dt>
 					<dd class={ddClass}>{formatValue(venta.referencia)}</dd>
 				</div>
@@ -213,6 +210,83 @@
 						{venta.nota}
 					</p>
 				</div>
+			{/if}
+		</section>
+
+		<section class={cardClass} aria-labelledby="venta-pagos-title">
+			<h2
+				id="venta-pagos-title"
+				class="border-b border-light-one_d px-4 py-3 font-semibold text-light-two dark:border-dark-one_d dark:text-dark-two"
+			>
+				Pagos
+				<span class="font-normal text-light-two_d dark:text-dark-two_d">
+					({venta.pagos.length})
+				</span>
+			</h2>
+			{#if venta.pagos.length === 0}
+				<p class="px-4 py-3 text-sm text-light-two_d dark:text-dark-two_d">
+					{cancelada ? 'No se registraron pagos.' : 'Se registran al cobrar el pedido.'}
+				</p>
+			{:else}
+				<ul class="divide-y divide-light-one_d dark:divide-dark-one_d">
+					{#each venta.pagos as pago (pago.id)}
+						{@const Icon = METODO_PAGO_ICON[pago.metodo]}
+						<li class="flex gap-3 px-4 py-3 text-sm">
+							<span
+								class="flex size-8 shrink-0 items-center justify-center bg-light-one_d text-light-three dark:bg-dark-one_d dark:text-dark-three"
+							>
+								<Icon class="size-4" />
+							</span>
+							<div class="min-w-0 flex-1">
+								<p class="font-medium text-light-two dark:text-dark-two">
+									{METODO_PAGO_LABEL[pago.metodo]}
+								</p>
+								{#if pago.referencia}
+									<p class="truncate text-xs text-light-two_d dark:text-dark-two_d">
+										{pago.referencia}
+									</p>
+								{/if}
+								<p class="text-xs text-light-two_d dark:text-dark-two_d">
+									{formatDateTime(pago.created_at)}
+								</p>
+								{#if pago.comprobante_url}
+									<!-- Imagen externa (Cloudinary), no una ruta de la app -->
+									<!-- eslint-disable svelte/no-navigation-without-resolve -->
+									<a
+										href={pago.comprobante_url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="mt-1 inline-flex h-8 items-center gap-1.5 text-xs font-medium text-light-three hover:underline dark:text-dark-three"
+									>
+										<PhotoIcon class="size-4" />
+										Ver comprobante
+									</a>
+									<!-- eslint-enable svelte/no-navigation-without-resolve -->
+								{/if}
+							</div>
+							<p
+								class={[
+									'shrink-0 font-semibold tabular-nums',
+									cancelada
+										? 'text-light-two_d line-through dark:text-dark-two_d'
+										: 'text-light-two dark:text-dark-two'
+								]}
+							>
+								{formatCurrency(pago.monto)}
+							</p>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if venta.pagos.length > 0}
+				<dl class="border-t border-light-one_d px-4 py-3 text-sm dark:border-dark-one_d">
+					<div class="flex justify-between">
+						<dt class={dtClass}>{anulada ? 'Devuelto' : 'Pagado'}</dt>
+						<dd class="font-semibold text-light-two tabular-nums dark:text-dark-two">
+							{formatCurrency(venta.total_pagado)}
+						</dd>
+					</div>
+				</dl>
 			{/if}
 		</section>
 
