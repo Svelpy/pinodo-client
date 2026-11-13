@@ -1,7 +1,7 @@
-import { resolve } from '$app/paths';
 import {
 	ArrowsLeftRightIcon,
 	BuildindStoreIcon,
+	CharBarIcon,
 	FileDescriptionIcon,
 	HomeDotIcon,
 	LayoutGridIcon,
@@ -11,19 +11,20 @@ import {
 	UsersIcon
 } from '#lib/icons/outline/index.ts';
 import type { NavChildItem, NavItem, NavSection } from '#lib/interfaces/index.ts';
+import { resolveRoute } from './routeAccess.config';
 
 type ChildInput = Omit<NavChildItem, 'href'>;
 type ItemInput = Omit<NavItem, 'href' | 'children'> & { children?: ChildInput[] };
 
 /** El href se resuelve desde la ruta: una sola fuente para el link y para el control de acceso */
 function navChild(item: ChildInput): NavChildItem {
-	return { ...item, href: resolve(item.route) };
+	return { ...item, href: resolveRoute(item.route) };
 }
 
 function navItem({ children, ...item }: ItemInput): NavItem {
 	return {
 		...item,
-		href: resolve(item.route),
+		href: resolveRoute(item.route),
 		...(children && { children: children.map(navChild) })
 	};
 }
@@ -65,7 +66,16 @@ export const PANEL_NAVIGATION: NavSection[] = [
 				label: 'Kardex',
 				route: '/panel/kardex',
 				icon: ArrowsLeftRightIcon,
-				children: [{ id: 'costos', label: 'Valor del stock', route: '/panel/kardex/costos' }]
+				children: [
+					{ id: 'ajustes', label: 'Ajustes', route: '/panel/kardex/ajustes' },
+					{ id: 'costos', label: 'Valor del stock', route: '/panel/kardex/costos' }
+				]
+			}),
+			navItem({
+				id: 'finanzas',
+				label: 'Finanzas',
+				route: '/panel/finanzas',
+				icon: CharBarIcon
 			}),
 			navItem({
 				id: 'secciones',

@@ -13,3 +13,8 @@ export { default as NegocioFormSkeleton } from './negocioFormSkeleton.svelte';
 export { default as PerfilSkeleton } from './perfilSkeleton.svelte';
 export { default as KardexListSkeleton } from './kardexListSkeleton.svelte';
 export { default as KardexCostoListSkeleton } from './kardexCostoListSkeleton.svelte';
+export { default as KardexAjusteListSkeleton } from './kardexAjusteListSkeleton.svelte';
+export { default as KardexAjusteDetalleSkeleton } from './kardexAjusteDetalleSkeleton.svelte';
+export { default as KardexMovimientoDetalleSkeleton } from './kardexMovimientoDetalleSkeleton.svelte';
+export { default as FinanzasVentaListSkeleton } from './finanzasVentaListSkeleton.svelte';
+export { default as FinanzasRentabilidadListSkeleton } from './finanzasRentabilidadListSkeleton.svelte';

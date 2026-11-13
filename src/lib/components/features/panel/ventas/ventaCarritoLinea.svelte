@@ -5,6 +5,7 @@
 	import {
 		calcularLinea,
 		formatCurrency,
+		precioCambio,
 		precioLinea,
 		toCents,
 		validarLinea
@@ -40,11 +41,7 @@
 	const enRebaja = $derived(toCents(precio) < toCents(linea.precio_normal));
 	const maximo = $derived(linea.stock ?? Infinity);
 	// El precio de hoy difiere del ofrecido (solo pasa al editar un pedido guardado)
-	const precioCambio = $derived(
-		!recalcular &&
-			linea.precio_actual !== null &&
-			toCents(linea.precio_actual) !== toCents(linea.precio_unitario)
-	);
+	const cambioPrecio = $derived(precioCambio(linea));
 
 	// svelte-ignore state_referenced_locally
 	let mostrarDescuento = $state(linea.descuento_unitario !== '');
@@ -173,10 +170,37 @@
 			{errores.cantidad}
 		</p>
 	{/if}
-	{#if precioCambio && linea.precio_actual !== null}
-		<p class="mt-1 text-xs text-light-two_d dark:text-dark-two_d">
-			Precio de hoy: <span class="font-semibold">{formatCurrency(linea.precio_actual)}</span> (se conserva
-			el ofrecido)
+	{#if cambioPrecio && linea.precio_actual !== null}
+		{@const sube = toCents(linea.precio_actual) > toCents(linea.precio_unitario)}
+		<p
+			class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs tabular-nums"
+			aria-label="Precio ofrecido {formatCurrency(
+				linea.precio_unitario
+			)}, precio de hoy {formatCurrency(linea.precio_actual)}; se cobra el {recalcular
+				? 'de hoy'
+				: 'ofrecido'}"
+		>
+			<span
+				class={recalcular
+					? 'text-light-two_d line-through dark:text-dark-two_d'
+					: 'font-semibold text-light-two dark:text-dark-two'}
+			>
+				Ofrecido {formatCurrency(linea.precio_unitario)}
+			</span>
+			<span
+				class={recalcular
+					? 'font-semibold text-light-two dark:text-dark-two'
+					: 'text-light-two_d line-through dark:text-dark-two_d'}
+			>
+				Hoy {formatCurrency(linea.precio_actual)}
+				<span
+					class={sube
+						? 'text-light-error dark:text-dark-error'
+						: 'text-light-success dark:text-dark-success'}
+				>
+					{sube ? '▲' : '▼'}
+				</span>
+			</span>
 		</p>
 	{/if}
 	{#if errores.linea}

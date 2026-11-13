@@ -24,7 +24,7 @@
 	<span class="sr-only">Cargando…</span>
 
 	<!-- Móvil: tarjetas (mismo layout que VentaCard) -->
-	<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden" aria-hidden="true">
+	<div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 md:hidden" aria-hidden="true">
 		{#each { length: items }, i (i)}
 			<div
 				class="flex animate-pulse gap-3 border border-light-one_d bg-light-one p-4 dark:border-dark-one_d dark:bg-dark-one"

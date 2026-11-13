@@ -32,7 +32,7 @@ export function createKey(): string {
 
 const newKey = createKey;
 
-/** SKU en blanco para el formulario: visible y con stock en 0 */
+/** SKU en blanco para el formulario: visible, sin costo y con stock en 0 */
 export function createProductoSku(): ProductoFormSku {
 	return {
 		key: newKey(),
@@ -40,6 +40,7 @@ export function createProductoSku(): ProductoFormSku {
 		codigo_barras: '',
 		is_visible: true,
 		precio: { normal: '', rebajado: '', rebaja_hasta: '' },
+		costo: '',
 		stock: { cantidad: '0', minimo: '0' }
 	};
 }
@@ -156,11 +157,44 @@ export function toProductoColorForm(color: ProductoColor): ProductoFormColor {
 				rebajado: toText(sku.precio.rebajado),
 				rebaja_hasta: sku.precio.rebaja_hasta ?? ''
 			},
-			// Solo informativo: el stock de un SKU guardado se ajusta con PATCH /skus
+			// La respuesta del SKU no trae su costo: lo completa `aplicarCostosActuales` con el kardex
+			costo: '',
+			// Solo informativo: el stock de un SKU guardado se mueve con un ajuste de inventario
 			stock: { cantidad: toText(sku.stock.cantidad), minimo: toText(sku.stock.minimo) }
 		}))
 	};
 }
+
+/**
+ * Completa el costo de los SKUs guardados con el costo promedio del kardex (`sku_id → costo`), que
+ * la respuesta del SKU no trae. Los que no están en `costos` quedan sin costo editable.
+ */
+export function aplicarCostosActuales(
+	skus: readonly ProductoFormSku[],
+	costos: ReadonlyMap<string, number | null>
+): ProductoFormSku[] {
+	return skus.map((sku) => {
+		if (!sku.id || !costos.has(sku.id)) return sku;
+		const costo = costos.get(sku.id) ?? null;
+		return { ...sku, costo: toText(costo), costo_actual: costo };
+	});
+}
+
+/** `sku_id → costo` de los SKUs guardados cuyo costo se cargó (para `buildProductoColorPatch`) */
+export function costosActuales(skus: readonly ProductoFormSku[]): Map<string, number | null> {
+	return new Map(
+		skus.flatMap((sku) =>
+			sku.id && sku.costo_actual !== undefined ? [[sku.id, sku.costo_actual] as const] : []
+		)
+	);
+}
+
+/**
+ * Costo de la fila para la huella: en un SKU guardado solo cuenta si difiere del cargado, así que
+ * cargar los costos del kardex no marca el formulario como modificado.
+ */
+const costoFirma = (sku: ProductoFormSku) =>
+	sku.id && sku.costo === toText(sku.costo_actual) ? null : sku.costo;
 
 /**
  * Huella de un color del formulario para saber si cambió: ignora lo que es solo de la interfaz
@@ -177,6 +211,7 @@ export function productoColorFormSignature(color: ProductoFormColor): string {
 			sku.codigo_barras,
 			sku.is_visible,
 			sku.precio,
+			costoFirma(sku),
 			sku.stock
 		])
 	});
@@ -202,13 +237,19 @@ const samePrecio = (a: ProductoPrecio, b: ProductoPrecio) =>
 
 /**
  * Body del `PATCH /producto-colores/{id}` con solo lo cambiado respecto al color guardado. Las
- * imágenes se envían completas si la galería cambió (la API la reemplaza); los SKUs guardados van
- * con sus campos cambiados (el precio completo y nunca el stock) y los nuevos completos.
+ * imágenes se envían completas si la galería cambió (la API la reemplaza). Un SKU guardado que
+ * cambió va con su talla y su precio completo (la API los exige siempre) más los demás campos que
+ * cambiaron, nunca el stock; uno sin cambios no se envía. Los nuevos van completos.
  * Devuelve `{}` si no hay cambios.
+ *
+ * `costos` (`sku_id → costo` cargado del kardex): el costo de un SKU guardado solo se envía si está
+ * ahí y cambió. Sin él nunca se envía, porque corregiría el costo promedio a ciegas. Vaciar el
+ * campo no lo envía: el costo se queda como estaba.
  */
 export function buildProductoColorPatch(
 	original: ProductoColor,
-	parsed: ProductoColorParsed
+	parsed: ProductoColorParsed,
+	costos: ReadonlyMap<string, number | null> = new Map()
 ): UpdateProductoColorRequest {
 	const patch: UpdateProductoColorRequest = {};
 	if (parsed.color_id !== original.color_id) patch.color_id = parsed.color_id;
@@ -229,14 +270,25 @@ export function buildProductoColorPatch(
 			skus.push(sku);
 			continue;
 		}
-		const fila: UpdateProductoColorSkuRow = { id };
-		if (sku.talla_id !== previo.talla_id) fila.talla_id = sku.talla_id;
+		// La API exige talla y precio en cada fila con id; solo escribe lo que difiere
+		const fila: UpdateProductoColorSkuRow = { id, talla_id: sku.talla_id, precio: sku.precio };
+		let cambio = sku.talla_id !== previo.talla_id || !samePrecio(sku.precio, previo.precio);
 		if (sku.codigo_barras !== (previo.codigo_barras ?? null)) {
 			fila.codigo_barras = sku.codigo_barras;
+			cambio = true;
 		}
-		if (sku.is_visible !== previo.is_visible) fila.is_visible = sku.is_visible;
-		if (!samePrecio(sku.precio, previo.precio)) fila.precio = sku.precio;
-		if (Object.keys(fila).length > 1) skus.push(fila);
+		if (sku.is_visible !== previo.is_visible) {
+			fila.is_visible = sku.is_visible;
+			cambio = true;
+		}
+		if (sku.costo !== undefined && costos.has(id)) {
+			const actual = costos.get(id) ?? null;
+			if (actual === null || Math.round(actual * 100) !== Math.round(sku.costo * 100)) {
+				fila.costo = sku.costo;
+				cambio = true;
+			}
+		}
+		if (cambio) skus.push(fila);
 	}
 	if (skus.length > 0) patch.skus = skus;
 
@@ -262,6 +314,7 @@ export function toAddProductoColorRequest(
 			codigo_barras: sku.codigo_barras,
 			is_visible: sku.is_visible,
 			precio: sku.precio,
+			costo: sku.costo,
 			stock: sku.stock
 		}))
 	};

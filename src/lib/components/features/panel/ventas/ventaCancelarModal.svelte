@@ -7,7 +7,7 @@
 
 	interface Props {
 		/** Venta a cancelar o anular; null = cerrado */
-		venta: Venta | null;
+		venta: Venta | VentaDetalle | null;
 		onClose: () => void;
 		onCancelled: (venta: VentaDetalle) => void;
 	}

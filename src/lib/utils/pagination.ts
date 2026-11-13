@@ -34,3 +34,19 @@ export async function fetchAllPages<T>(
 	);
 	return [first, ...rest].flatMap((response) => response.data);
 }
+
+/**
+ * Página de una lista que ya está entera en memoria (p. ej. el detalle de un reporte). La página
+ * se ajusta al rango válido; `totalPages` es al menos 1.
+ */
+export function paginarLocal<T>(
+	items: readonly T[],
+	page: number,
+	perPage: number
+): { items: T[]; page: number; totalPages: number } {
+	const size = Math.max(1, Math.trunc(perPage));
+	const totalPages = Math.max(1, Math.ceil(items.length / size));
+	const actual = clamp(page, 1, totalPages);
+	const start = (actual - 1) * size;
+	return { items: items.slice(start, start + size), page: actual, totalPages };
+}

@@ -32,8 +32,7 @@ export function toTiendaForm(tienda: Tienda): TiendaFormValues {
 				cierre: cierre ?? HORARIO_DEFAULT.cierre
 			};
 		}),
-		redes_sociales: Object.entries(tienda.redes_sociales ?? {}).map(([red, url]) => ({ red, url })),
-		en_mantenimiento: tienda.en_mantenimiento
+		redes_sociales: Object.entries(tienda.redes_sociales ?? {}).map(([red, url]) => ({ red, url }))
 	};
 }
 
@@ -92,9 +91,6 @@ export function buildTiendaPatch(
 	if (!sameRecord(data.horario, tienda.horario)) patch.horario = data.horario;
 	if (!sameRecord(data.redes_sociales, tienda.redes_sociales)) {
 		patch.redes_sociales = data.redes_sociales;
-	}
-	if (data.en_mantenimiento !== tienda.en_mantenimiento) {
-		patch.en_mantenimiento = data.en_mantenimiento;
 	}
 
 	// Un archivo nuevo ya reemplaza al anterior; quitar solo tiene sentido si hay uno guardado

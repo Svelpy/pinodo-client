@@ -87,7 +87,7 @@
 
 		<div class={['transition-opacity', isLoading && 'pointer-events-none opacity-60']}>
 			<!-- Móvil y tablet pequeña: tarjetas -->
-			<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden">
+			<div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 md:hidden">
 				{#each costos as costo (costo.sku_id)}
 					<KardexCostoCard {costo} />
 				{/each}

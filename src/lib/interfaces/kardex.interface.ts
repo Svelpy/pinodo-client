@@ -1,53 +1,76 @@
-import type { MovimientoTipo, RangoFecha } from '#lib/constants/index.ts';
+import type { Role } from '#lib/config/permissions.config.ts';
+import type { AjusteMotivo, MovimientoTipo, RangoFecha } from '#lib/constants/index.ts';
 import type { PaginationParams } from './pagination.interface';
-import type { ProductoPrecio, ProductoStock } from './producto.interface';
-import type { Venta } from './venta.interface';
 
 // ── Kardex (`/movimientos-inventario/`) ───────────────────────────────────────────────────────
 
-/** SKU tal como viene en un movimiento: sin nombres de producto, color ni talla */
+/**
+ * La prenda de un movimiento, lista para mostrar. La API la resuelve aunque el SKU, su color o su
+ * producto estén eliminados. No trae precio ni stock: el stock de hoy no es el saldo del movimiento.
+ */
 export interface MovimientoSku {
 	id: string;
-	producto_color_id: string;
-	talla_id: string;
 	codigo_barras: string | null;
-	is_visible: boolean;
-	precio: ProductoPrecio;
-	/** Stock de hoy, no el que dejó el movimiento (ese es `saldo`) */
-	stock: ProductoStock;
-	created_at: string;
-	updated_at: string;
+	producto_id: string;
+	producto_nombre: string;
+	color_nombre: string;
+	talla_etiqueta: string;
 }
 
-/** Un movimiento de inventario: cada entrada o salida de stock de un SKU */
+/**
+ * Documento que causó el movimiento: "Ajuste #12" o "Venta #9". Una VENTA y su ANULACION apuntan a
+ * la misma venta.
+ */
+export interface MovimientoOrigen {
+	tipo: 'AJUSTE' | 'VENTA';
+	id: string;
+	numero: number;
+	/** Motivo del ajuste; null en una venta */
+	motivo: AjusteMotivo | null;
+}
+
+/** Usuario responsable del movimiento (se resuelve aunque esté eliminado) */
+export interface MovimientoUsuario {
+	id: string;
+	nombre: string;
+	apellidos: string | null;
+	rol: Role;
+}
+
+/** Una fila del kardex valorizado */
 export interface MovimientoInventario {
 	id: string;
-	sku_id: string;
 	tipo: MovimientoTipo;
 	/** Positivo entra, negativo sale */
 	cantidad: number;
 	/** Stock del SKU que dejó este movimiento */
 	saldo: number;
 	/** Costo por unidad del movimiento */
-	costo_unitario: number | null;
+	costo_unitario: number;
+	/** cantidad × costo_unitario (negativo si sale) */
+	costo_total: number;
 	/** Costo promedio del SKU después del movimiento */
-	costo_promedio: number | null;
-	motivo: string | null;
-	venta_id: string | null;
+	costo_promedio: number;
+	/** saldo × costo_promedio */
+	saldo_valor: number;
 	created_at: string;
-	/** Id del usuario que lo originó */
+	/** Auditoría; el responsable es `usuario` */
 	created_by: string | null;
-	sku: MovimientoSku | null;
-	/** Venta que lo originó (VENTA y ANULACION) */
-	venta: Venta | null;
+	sku: MovimientoSku;
+	origen: MovimientoOrigen;
+	usuario: MovimientoUsuario;
 }
 
 export interface ListMovimientosParams extends PaginationParams {
 	/** Con un SKU es su kardex */
 	sku_id?: string;
 	tipo?: MovimientoTipo;
+	/** Motivo del ajuste */
+	motivo?: AjusteMotivo;
+	ajuste_id?: string;
 	venta_id?: string;
-	created_by?: string;
+	/** Usuario responsable */
+	user_id?: string;
 	/** Fecha de la tienda YYYY-MM-DD, incluida */
 	desde?: string;
 	/** Fecha de la tienda YYYY-MM-DD, incluida */
@@ -78,16 +101,8 @@ export interface ListCostosParams extends PaginationParams {
 	color_id?: string;
 }
 
-/** Nombre de un SKU para mostrarlo (los movimientos solo traen su id) */
-export interface SkuNombre {
-	producto_id: string;
-	producto_nombre: string;
-	color_nombre: string;
-	/** null si no se conoce (p. ej. el SKU vino de los costos) */
-	color_codigo_hex: string | null;
-	talla_etiqueta: string;
-	codigo_barras: string | null;
-}
+/** Producto, color y talla de un SKU para mostrarlo (de un movimiento, los costos o el inventario) */
+export type SkuNombre = Omit<MovimientoSku, 'id'>;
 
 /** Filtros del kardex, tal como los elige el usuario */
 export interface KardexFiltros {
@@ -96,7 +111,10 @@ export interface KardexFiltros {
 	desde: string;
 	hasta: string;
 	tipo: MovimientoTipo | null;
-	created_by: string | null;
+	/** Solo aplica a los ajustes */
+	motivo: AjusteMotivo | null;
+	/** Usuario responsable */
+	user_id: string | null;
 	/** Kardex de un solo SKU */
 	sku_id: string | null;
 }

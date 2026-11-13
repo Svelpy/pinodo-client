@@ -113,6 +113,12 @@ export interface CreateProductoSkuRequest {
 	codigo_barras: string | null;
 	is_visible: boolean;
 	precio: ProductoPrecio;
+	/**
+	 * Lo que cuesta cada prenda (≥ 0; la API usa 0 si se omite). El stock inicial entra al kardex
+	 * como un INGRESO a este costo. No vuelve en la respuesta del SKU: se consulta en
+	 * `GET /movimientos-inventario/costos`.
+	 */
+	costo?: number;
 	stock: { cantidad: number; minimo: number };
 }
 
@@ -151,12 +157,19 @@ export interface AddProductoColorRequest extends CreateProductoColorRequest {
 }
 
 /**
- * Fila de un SKU existente en `PATCH /producto-colores/{id}`: solo los campos cambiados (el precio
- * va completo). No acepta stock: se ajusta con `PATCH /skus/{id}`
+ * Fila de un SKU existente en `PATCH /producto-colores/{id}`. La API exige siempre `talla_id` y el
+ * `precio` completo (aunque no cambien: solo escribe lo que difiere); el resto solo si cambió. De
+ * stock solo admite `minimo`: la cantidad entra y sale con un ajuste de inventario
+ * (`POST /ajustes-inventario/`). `costo` corrige el costo promedio sin registrar un movimiento: solo
+ * se envía si se cambió el costo que se cargó del kardex.
  */
-export type UpdateProductoColorSkuRow = { id: string } & Partial<
-	Omit<CreateProductoSkuRequest, 'stock'>
->;
+export type UpdateProductoColorSkuRow = {
+	id: string;
+	talla_id: string;
+	precio: ProductoPrecio;
+} & Partial<Pick<CreateProductoSkuRequest, 'codigo_barras' | 'is_visible' | 'costo'>> & {
+		stock?: { minimo: number };
+	};
 
 /**
  * `PATCH /producto-colores/{id}`: lo omitido no cambia. `imagenes` reemplaza la galería
@@ -169,26 +182,6 @@ export interface UpdateProductoColorRequest {
 	skus?: (UpdateProductoColorSkuRow | CreateProductoSkuRequest)[];
 	/** Elimina esos SKUs y libera su talla y código de barras para las filas de la misma petición */
 	sku_ids_eliminar?: string[];
-}
-
-/**
- * `PATCH /skus/{id}`: solo lo enviado, también dentro de precio. `precio.rebajado: null` quita la
- * rebaja y su fecha; `codigo_barras: null` lo quita. El stock se ajusta con `PATCH /skus/{id}/stock`.
- */
-export interface UpdateSkuRequest {
-	talla_id?: string;
-	codigo_barras?: string | null;
-	is_visible?: boolean;
-	precio?: Partial<ProductoPrecio>;
-}
-
-/**
- * `PATCH /skus/{id}/stock`: se envía `ajuste`, `minimo` o ambos. `ajuste` es cuántas prendas entran
- * (positivo) o salen (negativo); se suma al stock actual y no puede ser 0.
- */
-export interface AjustarStockRequest {
-	ajuste?: number;
-	minimo?: number;
 }
 
 /** `POST /skus/sugerir-codigo-barras` */
@@ -240,6 +233,13 @@ export interface ProductoFormSku {
 	codigo_barras: string;
 	is_visible: boolean;
 	precio: { normal: string; rebajado: string; rebaja_hasta: string };
+	/** Costo por prenda. En uno nuevo, vacío = no se envía; en uno guardado, solo si cambió */
+	costo: string;
+	/**
+	 * SKU guardado: su costo promedio según el kardex (la respuesta del SKU no lo trae).
+	 * `undefined` = no se cargó, y entonces el costo no se puede editar; `null` = sin costo registrado.
+	 */
+	costo_actual?: number | null;
 	stock: { cantidad: string; minimo: string };
 }
 

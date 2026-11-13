@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { ProductoColor, ProductoDetalle } from '#lib/interfaces/index.ts';
 import { productoColorSchema, productoDatosSchema } from '#lib/zod/index.ts';
 import {
+	aplicarCostosActuales,
 	buildProductoColorPatch,
 	buildProductoPatch,
+	costosActuales,
 	productoColorFormSignature,
 	productoDatosFormSignature,
 	toAddProductoColorRequest,
@@ -75,13 +77,20 @@ const colorGuardado = (): ProductoColor => ({
 	updated_at: ''
 });
 
-/** Formulario del color → schema → PATCH, igual que hace el editor */
-function patchFor(edit: (form: ReturnType<typeof toProductoColorForm>) => void) {
+/**
+ * Formulario del color → schema → PATCH, igual que hace el editor. `costos` simula los costos
+ * cargados del kardex al abrirlo (`sku_id → costo`).
+ */
+function patchFor(
+	edit: (form: ReturnType<typeof toProductoColorForm>) => void,
+	costos?: ReadonlyMap<string, number | null>
+) {
 	const original = colorGuardado();
 	const form = toProductoColorForm(original);
+	if (costos) form.skus = aplicarCostosActuales(form.skus, costos);
 	edit(form);
 	const parsed = productoColorSchema.parse(toProductoColorInput(form));
-	return buildProductoColorPatch(original, parsed);
+	return buildProductoColorPatch(original, parsed, costosActuales(form.skus));
 }
 
 describe('toProductoColorForm', () => {
@@ -103,18 +112,36 @@ describe('toProductoColorForm', () => {
 	});
 });
 
+/** Precio de `skuGuardado` como lo envía el formulario: la API lo exige en cada fila con id */
+const PRECIO_GUARDADO = { normal: 29.95, rebajado: 19.95, rebaja_hasta: '2026-12-31' };
+
 describe('buildProductoColorPatch', () => {
 	it('sin cambios devuelve un body vacío', () => {
 		expect(patchFor(() => {})).toEqual({});
 	});
 
-	it('envía solo los campos cambiados de un SKU guardado, con el precio completo y sin stock', () => {
+	it('un SKU guardado que cambió va con su talla y precio completo, sin stock', () => {
 		const patch = patchFor((form) => {
 			form.skus[0].precio.rebajado = '';
 			form.skus[0].stock.cantidad = '99';
 		});
 		expect(patch).toEqual({
-			skus: [{ id: SKU_1, precio: { normal: 29.95, rebajado: null, rebaja_hasta: '2026-12-31' } }]
+			skus: [
+				{
+					id: SKU_1,
+					talla_id: TALLA_S,
+					precio: { normal: 29.95, rebajado: null, rebaja_hasta: '2026-12-31' }
+				}
+			]
+		});
+	});
+
+	it('cambiar solo el código de barras o la visibilidad también envía talla y precio', () => {
+		expect(patchFor((form) => (form.skus[0].codigo_barras = '222'))).toEqual({
+			skus: [{ id: SKU_1, talla_id: TALLA_S, precio: PRECIO_GUARDADO, codigo_barras: '222' }]
+		});
+		expect(patchFor((form) => (form.skus[1].is_visible = false))).toEqual({
+			skus: [{ id: SKU_2, talla_id: TALLA_M, precio: PRECIO_GUARDADO, is_visible: false }]
 		});
 	});
 
@@ -138,6 +165,7 @@ describe('buildProductoColorPatch', () => {
 				codigo_barras: '',
 				is_visible: true,
 				precio: { normal: '10', rebajado: '', rebaja_hasta: '' },
+				costo: '4,5',
 				stock: { cantidad: '5', minimo: '1' }
 			});
 		});
@@ -148,11 +176,16 @@ describe('buildProductoColorPatch', () => {
 					codigo_barras: null,
 					is_visible: true,
 					precio: { normal: 10, rebajado: null, rebaja_hasta: null },
+					costo: 4.5,
 					stock: { cantidad: 5, minimo: 1 }
 				}
 			],
 			sku_ids_eliminar: [SKU_1]
 		});
+	});
+
+	it('sin costos cargados nunca envía el costo de un SKU guardado (lo pisaría a ciegas)', () => {
+		expect(patchFor((form) => (form.skus[0].costo = '10'))).toEqual({});
 	});
 
 	it('cambia la etiqueta del color y su visibilidad', () => {
@@ -165,8 +198,47 @@ describe('buildProductoColorPatch', () => {
 
 	it('una talla cambiada en un SKU guardado se envía en su fila', () => {
 		expect(patchFor((form) => (form.skus[1].talla_id = TALLA_L))).toEqual({
-			skus: [{ id: SKU_2, talla_id: TALLA_L }]
+			skus: [{ id: SKU_2, talla_id: TALLA_L, precio: PRECIO_GUARDADO }]
 		});
+	});
+});
+
+describe('costo de los SKUs guardados', () => {
+	const COSTOS = new Map<string, number | null>([
+		[SKU_1, 12.5],
+		[SKU_2, null]
+	]);
+
+	it('aplicarCostosActuales completa el costo y no marca el formulario como modificado', () => {
+		const form = toProductoColorForm(colorGuardado());
+		const firma = productoColorFormSignature(form);
+		form.skus = aplicarCostosActuales(form.skus, COSTOS);
+		expect(form.skus[0]).toMatchObject({ costo: '12.5', costo_actual: 12.5 });
+		expect(form.skus[1]).toMatchObject({ costo: '', costo_actual: null });
+		expect(productoColorFormSignature(form)).toBe(firma);
+
+		form.skus[0].costo = '13';
+		expect(productoColorFormSignature(form)).not.toBe(firma);
+	});
+
+	it('solo envía el costo que cambió, con coma decimal', () => {
+		expect(patchFor(() => {}, COSTOS)).toEqual({});
+		expect(patchFor((form) => (form.skus[0].costo = '12,50'), COSTOS)).toEqual({});
+		expect(patchFor((form) => (form.skus[0].costo = '13,75'), COSTOS)).toEqual({
+			skus: [{ id: SKU_1, talla_id: TALLA_S, precio: PRECIO_GUARDADO, costo: 13.75 }]
+		});
+	});
+
+	it('envía el costo de un SKU sin costo registrado y no envía un campo vaciado', () => {
+		expect(patchFor((form) => (form.skus[1].costo = '8'), COSTOS)).toEqual({
+			skus: [{ id: SKU_2, talla_id: TALLA_M, precio: PRECIO_GUARDADO, costo: 8 }]
+		});
+		expect(patchFor((form) => (form.skus[0].costo = ''), COSTOS)).toEqual({});
+	});
+
+	it('un SKU que no vino en los costos no se toca', () => {
+		const soloUno = new Map([[SKU_1, 12.5]]);
+		expect(patchFor((form) => (form.skus[1].costo = '8'), soloUno)).toEqual({});
 	});
 });
 
@@ -178,6 +250,23 @@ describe('toAddProductoColorRequest', () => {
 		expect(body.producto_id).toBe('p');
 		expect(body.skus.every((sku) => !('id' in sku))).toBe(true);
 		expect(body.skus[0].stock).toEqual({ cantidad: 12, minimo: 3 });
+	});
+
+	it('envía el costo escrito y lo omite si quedó vacío', () => {
+		const form = toProductoColorForm(colorGuardado());
+		form.skus[0].costo = '12.5';
+		const conCosto = toAddProductoColorRequest(
+			'p',
+			productoColorSchema.parse(toProductoColorInput(form))
+		);
+		expect(conCosto.skus[0].costo).toBe(12.5);
+
+		form.skus[0].costo = '';
+		const sinCosto = toAddProductoColorRequest(
+			'p',
+			productoColorSchema.parse(toProductoColorInput(form))
+		);
+		expect(JSON.stringify(sinCosto.skus[0])).not.toContain('costo');
 	});
 });
 

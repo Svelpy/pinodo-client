@@ -34,11 +34,11 @@
 			<div class="min-w-0">
 				<a
 					href={resolve('/panel/productos/[id]', { id: producto.id })}
-					class="block font-medium break-words text-light-two hover:underline dark:text-dark-two"
+					class="block font-medium wrap-break-word text-light-two hover:underline dark:text-dark-two"
 				>
 					{producto.nombre}
 				</a>
-				<p class="text-xs break-words text-light-two_d dark:text-dark-two_d">
+				<p class="text-xs wrap-break-word text-light-two_d dark:text-dark-two_d">
 					{producto.seccion.nombre}
 				</p>
 			</div>

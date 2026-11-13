@@ -26,7 +26,11 @@ export const Module = {
 	TALLA: 'TALLA',
 	// Biblioteca de imágenes (`IMAGEN` en el backend)
 	ARCHIVO: 'ARCHIVO',
-	NEGOCIO: 'NEGOCIO'
+	NEGOCIO: 'NEGOCIO',
+	// Kardex y valor del stock. El CAJERO no lo ve: no ve costos ni mueve stock
+	MOVIMIENTO_INVENTARIO: 'MOVIMIENTO_INVENTARIO',
+	// Reportes de ventas y rentabilidad (`/finanzas/*`). Solo se consultan; el CAJERO no los ve
+	FINANZAS: 'FINANZAS'
 } as const;
 export type Module = (typeof Module)[keyof typeof Module];
 
@@ -81,6 +85,7 @@ type ModulePermissions = Partial<Record<Module, readonly Action[]>>;
 const ALL_ACTIONS: readonly Action[] = [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE];
 const SIN_ELIMINAR: readonly Action[] = [Action.CREATE, Action.READ, Action.UPDATE];
 const SOLO_LECTURA: readonly Action[] = [Action.READ];
+const KARDEX: readonly Action[] = [Action.CREATE, Action.READ];
 
 /** Las mismas acciones en todos los módulos, salvo las `overrides` indicadas */
 function everyModule(actions: readonly Action[], overrides: ModulePermissions): ModulePermissions {
@@ -102,19 +107,28 @@ const sinEliminar = (overrides: ModulePermissions = {}) => everyModule(SIN_ELIMI
  * Ventas: registrar es VENTA:CREATE; editar, cobrar y cancelar un pendiente, VENTA:UPDATE; anular
  * una venta ya cobrada (devuelve el stock), VENTA:DELETE.
  * El negocio es una sola fila: nadie lo crea ni lo elimina.
+ * El kardex no se edita ni se elimina (se corrige con otro ajuste): CREATE = registrar ajustes.
+ * Los reportes de finanzas solo se leen (también su descarga en Excel).
  */
 export const ROLE_PERMISSIONS: Record<Role, ModulePermissions> = {
 	// Todo salvo ventas: las consulta, pero no registra, edita, cobra, cancela ni anula
 	[Role.SUPERADMIN]: fullAccess({
 		[Module.VENTA]: SOLO_LECTURA,
-		[Module.NEGOCIO]: SOLO_LECTURA
+		[Module.NEGOCIO]: SOLO_LECTURA,
+		[Module.FINANZAS]: SOLO_LECTURA
 	}),
 	// Todo, incluido eliminar y anular ventas cobradas
-	[Role.OWNER]: fullAccess({ [Module.NEGOCIO]: [Action.READ, Action.UPDATE] }),
+	[Role.OWNER]: fullAccess({
+		[Module.NEGOCIO]: [Action.READ, Action.UPDATE],
+		[Module.MOVIMIENTO_INVENTARIO]: KARDEX,
+		[Module.FINANZAS]: SOLO_LECTURA
+	}),
 	// Todo menos eliminar, salvo en ventas: también anula ventas cobradas
 	[Role.ADMIN]: sinEliminar({
 		[Module.VENTA]: ALL_ACTIONS,
-		[Module.NEGOCIO]: [Action.READ, Action.UPDATE]
+		[Module.NEGOCIO]: [Action.READ, Action.UPDATE],
+		[Module.MOVIMIENTO_INVENTARIO]: KARDEX,
+		[Module.FINANZAS]: SOLO_LECTURA
 	}),
 	// Solo lectura de lo que necesita para vender; en ventas registra y gestiona los pendientes
 	[Role.CAJERO]: {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { Header, Sidebar } from '#lib/components/ui/index.ts';
+	import { resolveRoute } from '#lib/config/index.ts';
 	import { PANEL_NAVIGATION } from '#lib/config/navigation.config.ts';
 	import { ACCESS_TOKEN_KEY } from '#lib/constants/index.ts';
 	import { authService } from '#lib/services/index.ts';
@@ -22,7 +22,7 @@
 
 	const sections = $derived(filterNavigation(PANEL_NAVIGATION, $currentRole));
 	const activeItem = $derived(findActiveNavItem(sections, page.url.pathname));
-	const homeHref = $derived(resolve($currentRole ? getHomeRoute($currentRole) : '/panel'));
+	const homeHref = $derived(resolveRoute($currentRole ? getHomeRoute($currentRole) : '/panel'));
 
 	// La sesión se perdió sin que el usuario la cerrara (refresh rechazado o tokens borrados): al login
 	// con aviso, recordando la página actual para volver tras iniciar sesión
@@ -61,7 +61,7 @@
 >
 	<Sidebar {sections} bind:open={sidebarOpen} id={SIDEBAR_ID} {homeHref} />
 	<div
-		class="relative flex flex-col bg-light-one lg:h-full lg:min-h-0 lg:overflow-y-auto lg:rounded-xl dark:bg-dark-one_d"
+		class="relative flex min-h-dvh flex-col bg-light-one lg:h-full lg:min-h-0 lg:overflow-y-auto lg:rounded-xl dark:bg-dark-one_d"
 	>
 		<Header
 			title={activeItem?.label ?? 'Panel'}

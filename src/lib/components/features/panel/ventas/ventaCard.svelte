@@ -6,6 +6,7 @@
 	import VentaActions from './ventaActions.svelte';
 	import VentaCanal from './ventaCanal.svelte';
 	import VentaEstadoBadge from './ventaEstadoBadge.svelte';
+	import VentaMetodosPago from './ventaMetodosPago.svelte';
 
 	interface Props {
 		venta: Venta;
@@ -43,8 +44,11 @@
 					: ''}{venta.cliente_telefono ?? ''}
 			</p>
 		{/if}
-		<div class="mt-2 text-sm">
+		<div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
 			<VentaCanal canal={venta.canal} />
+			{#if venta.metodos_pago.length > 0}
+				<VentaMetodosPago metodos={venta.metodos_pago} />
+			{/if}
 		</div>
 	</div>
 	<div class="flex shrink-0 flex-col items-end justify-between">

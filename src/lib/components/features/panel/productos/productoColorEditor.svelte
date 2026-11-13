@@ -1,12 +1,15 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { ColorFormSheet } from '#lib/components/features/panel/colores/index.ts';
 	import { AlertBox, Button } from '#lib/components/ui/index.ts';
 	import { PlusIcon } from '#lib/icons/outline/index.ts';
 	import type { Color, ProductoColor, Talla } from '#lib/interfaces/index.ts';
-	import { errorService, productoColorService } from '#lib/services/index.ts';
+	import { errorService, kardexService, productoColorService } from '#lib/services/index.ts';
 	import {
 		alert,
+		aplicarCostosActuales,
 		buildProductoColorPatch,
+		costosActuales,
 		createProductoColor,
 		hasFailedUploads,
 		hasPendingUploads,
@@ -61,6 +64,7 @@
 	let isSaving = $state(false);
 	let isColorOpen = $state(false);
 	let createdColores = $state<Color[]>([]);
+	let costosError = $state(false);
 
 	const isNew = $derived(!color);
 	const todosColores = $derived([...colores, ...createdColores]);
@@ -69,6 +73,20 @@
 
 	$effect(() => {
 		onDirtyChange?.(hasChanges);
+	});
+
+	// La respuesta del SKU no trae su costo: se lee del kardex para poder corregirlo. Si falla, las
+	// tallas guardadas simplemente no muestran el costo y nunca se envía
+	onMount(() => {
+		const original = color;
+		if (!original || original.skus.length === 0) return;
+		kardexService
+			.costos({ producto_id: productoId, color_id: original.color_id, per_page: 100 })
+			.then(({ data }) => {
+				const costos = new Map(data.map((item) => [item.sku_id, item.costo]));
+				form.skus = aplicarCostosActuales(form.skus, costos);
+			})
+			.catch(() => (costosError = true));
 	});
 
 	function handleColorCreated(saved: Color) {
@@ -100,7 +118,7 @@
 		try {
 			let saved: ProductoColor;
 			if (color) {
-				const patch = buildProductoColorPatch(color, result.data);
+				const patch = buildProductoColorPatch(color, result.data, costosActuales(form.skus));
 				if (Object.keys(patch).length === 0) {
 					onCancel();
 					return;
@@ -152,6 +170,12 @@
 
 	{#if formError}
 		<AlertBox>{formError}</AlertBox>
+	{/if}
+	{#if costosError}
+		<p class="text-xs text-light-two_d dark:text-dark-two_d">
+			No se pudo cargar el costo de las tallas guardadas, así que por ahora no se puede corregir. Lo
+			demás se guarda con normalidad.
+		</p>
 	{/if}
 
 	<ProductoColorCard

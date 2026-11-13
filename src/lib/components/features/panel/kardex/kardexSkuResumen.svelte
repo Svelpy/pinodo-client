@@ -1,53 +1,58 @@
 <script lang="ts">
 	import { Button } from '#lib/components/ui/index.ts';
 	import { XIcon } from '#lib/icons/outline/index.ts';
-	import type { ProductoStock, SkuNombre } from '#lib/interfaces/index.ts';
-	import { formatNumber } from '#lib/utils/index.ts';
+	import type { MovimientoInventario, SkuNombre } from '#lib/interfaces/index.ts';
+	import { formatCurrency, formatNumber } from '#lib/utils/index.ts';
 	import KardexSku from './kardexSku.svelte';
 
-	/** Cabecera del kardex de un SKU: qué SKU es, su stock de hoy y cómo volver a todos */
+	/** Cabecera del kardex de un SKU: qué prenda es, cómo quedó y cómo volver a todas */
 	interface Props {
-		sku: SkuNombre | undefined;
-		/** Código del SKU por si ya no está en el catálogo */
-		codigoBarras?: string | null;
-		/** Stock de hoy (viene en cada movimiento); null mientras no hay movimientos cargados */
-		stock: ProductoStock | null;
+		/** null mientras no se conoce (p. ej. se abrió desde la URL y aún no hay movimientos) */
+		sku: SkuNombre | null;
+		/**
+		 * Su último movimiento, solo si la vista no está recortada por fecha, tipo, motivo o
+		 * responsable: su saldo es el stock de hoy. null = no se muestran los totales.
+		 */
+		ultimo: MovimientoInventario | null;
 		onClear: () => void;
 	}
 
-	let { sku, codigoBarras = null, stock, onClear }: Props = $props();
+	let { sku, ultimo, onClear }: Props = $props();
 
-	const bajoMinimo = $derived(!!stock && stock.cantidad <= stock.minimo);
+	const labelClass = 'text-xs font-medium text-light-two_d dark:text-dark-two_d';
+	const valueClass = 'text-lg font-semibold text-light-two tabular-nums dark:text-dark-two';
 </script>
 
 <section
-	aria-label="Kardex del SKU"
-	class="flex flex-col gap-3 border border-light-one_d bg-light-one p-4 sm:flex-row sm:items-center dark:border-dark-one_d dark:bg-dark-one"
+	aria-label="Kardex de la prenda"
+	class="flex flex-col gap-4 border border-light-one_d bg-light-one p-4 lg:flex-row lg:items-center dark:border-dark-one_d dark:bg-dark-one"
 >
 	<div class="min-w-0 flex-1">
-		<p class="mb-1 text-xs font-medium text-light-two_d dark:text-dark-two_d">Kardex de</p>
-		<KardexSku {sku} {codigoBarras} mostrarCodigo />
+		<p class="mb-1 {labelClass}">Kardex de</p>
+		{#if sku}
+			<KardexSku {sku} mostrarCodigo />
+		{:else}
+			<p class="font-medium text-light-two_d dark:text-dark-two_d">Prenda seleccionada</p>
+		{/if}
 	</div>
-	{#if stock}
-		<div class="sm:text-right">
-			<p class="text-xs font-medium text-light-two_d dark:text-dark-two_d">Stock actual</p>
-			<p class="text-lg font-semibold text-light-two tabular-nums dark:text-dark-two">
-				{formatNumber(stock.cantidad)}
-				<span
-					class={[
-						'text-xs font-normal',
-						bajoMinimo
-							? 'text-light-error dark:text-dark-error'
-							: 'text-light-two_d dark:text-dark-two_d'
-					]}
-				>
-					(mínimo {formatNumber(stock.minimo)})
-				</span>
-			</p>
-		</div>
+	{#if ultimo}
+		<dl class="grid grid-cols-3 gap-4 lg:text-right">
+			<div>
+				<dt class={labelClass}>Stock</dt>
+				<dd class={valueClass}>{formatNumber(ultimo.saldo)}</dd>
+			</div>
+			<div>
+				<dt class={labelClass}>Costo prom.</dt>
+				<dd class={valueClass}>{formatCurrency(ultimo.costo_promedio)}</dd>
+			</div>
+			<div>
+				<dt class={labelClass}>Valor</dt>
+				<dd class={valueClass}>{formatCurrency(ultimo.saldo_valor)}</dd>
+			</div>
+		</dl>
 	{/if}
-	<Button variant="outline" size="sm" onclick={onClear} class="w-full sm:w-auto">
+	<Button variant="outline" size="sm" onclick={onClear} class="w-full lg:w-auto">
 		{#snippet leftIcon()}<XIcon class="size-4" />{/snippet}
-		Ver todos los SKUs
+		Ver todas las prendas
 	</Button>
 </section>

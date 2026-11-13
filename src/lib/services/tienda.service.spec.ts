@@ -35,7 +35,6 @@ describe('toTiendaFormData', () => {
 			ciudad: null,
 			horario: { lunes: '09:00-20:00' },
 			redes_sociales: {},
-			en_mantenimiento: false,
 			eliminar_favicon: true,
 			logo
 		});
@@ -43,7 +42,6 @@ describe('toTiendaFormData', () => {
 		expect(body.get('ciudad')).toBe('');
 		expect(body.get('horario')).toBe('{"lunes":"09:00-20:00"}');
 		expect(body.get('redes_sociales')).toBe('{}');
-		expect(body.get('en_mantenimiento')).toBe('false');
 		expect(body.get('eliminar_favicon')).toBe('true');
 		expect((body.get('logo') as File).name).toBe('logo.png');
 	});

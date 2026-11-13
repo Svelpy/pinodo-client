@@ -26,7 +26,7 @@
 	<span class="sr-only">Cargando…</span>
 
 	<!-- Móvil: tarjetas (mismo layout que KardexCard) -->
-	<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden" aria-hidden="true">
+	<div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 md:hidden" aria-hidden="true">
 		{#each { length: items }, i (i)}
 			<div
 				class="flex animate-pulse gap-3 border border-light-one_d bg-light-one p-4 dark:border-dark-one_d dark:bg-dark-one"
@@ -55,15 +55,21 @@
 					{#if mostrarSku}
 						<TableHead class={headClass}>Producto</TableHead>
 					{/if}
-					<TableHead class={[headClass, mostrarSku && 'w-36']}>Tipo</TableHead>
+					<TableHead class={[headClass, mostrarSku && 'w-44']}>Movimiento</TableHead>
 					<TableHead class="{headClass} w-24 text-right">Cantidad</TableHead>
-					<TableHead class="{headClass} w-20 text-right" title="Stock del SKU tras el movimiento">
-						Saldo
+					<TableHead class="{headClass} w-20 text-right">Saldo</TableHead>
+					<TableHead class="{headClass} hidden w-32 text-right lg:table-cell">
+						Costo unit.
 					</TableHead>
-					<TableHead class="{headClass} hidden w-32 text-right lg:table-cell">Costo unit.</TableHead
-					>
-					<TableHead class="{headClass} hidden w-32 text-right xl:table-cell">Costo prom.</TableHead
-					>
+					<TableHead class="{headClass} hidden w-32 text-right lg:table-cell">
+						Costo total
+					</TableHead>
+					<TableHead class="{headClass} hidden w-32 text-right xl:table-cell">
+						Costo prom.
+					</TableHead>
+					<TableHead class="{headClass} hidden w-32 text-right xl:table-cell">
+						Valor saldo
+					</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -71,7 +77,10 @@
 					<TableRow
 						class="animate-pulse border-light-one_d hover:bg-transparent dark:border-dark-one_d"
 					>
-						<TableCell class="px-4 py-3"><div class={['h-3.5 w-32', block]}></div></TableCell>
+						<TableCell class="px-4 py-3">
+							<div class={['h-3.5 w-32', block]}></div>
+							<div class={['mt-1.5 h-3 w-20', block]}></div>
+						</TableCell>
 						{#if mostrarSku}
 							<TableCell class="px-4 py-3">
 								<div class={['h-3.5', block, WIDTHS[i % WIDTHS.length]]}></div>
@@ -86,6 +95,12 @@
 							<div class={['ml-auto h-3.5 w-8', block]}></div>
 						</TableCell>
 						<TableCell class="hidden px-4 py-3 lg:table-cell">
+							<div class={['ml-auto h-3.5 w-16', block]}></div>
+						</TableCell>
+						<TableCell class="hidden px-4 py-3 lg:table-cell">
+							<div class={['ml-auto h-3.5 w-16', block]}></div>
+						</TableCell>
+						<TableCell class="hidden px-4 py-3 xl:table-cell">
 							<div class={['ml-auto h-3.5 w-16', block]}></div>
 						</TableCell>
 						<TableCell class="hidden px-4 py-3 xl:table-cell">

@@ -1,4 +1,4 @@
-import { ErrorCode } from '#lib/interfaces/index.ts';
+import { ErrorCode, type ArchivoDescargado } from '#lib/interfaces/index.ts';
 import { AppError, authService, errorService } from '#lib/services/index.ts';
 import { API_CONFIG, defaultHeaders } from './api.config';
 
@@ -81,6 +81,34 @@ class ApiPinodo {
 		}
 	}
 
+	/**
+	 * Envía la petición con el token y, si el access token venció, la reintenta una vez con uno
+	 * renovado. Lanza el error de la API si la respuesta no es 2xx; no lee el cuerpo.
+	 */
+	private async sendWithAuth(
+		endpoint: string,
+		method: string,
+		data: unknown,
+		options: RequestOptions
+	): Promise<Response> {
+		const token = this.resolveToken(options);
+		let response = await this.send(endpoint, method, data, options, token);
+
+		// Access token vencido: se renueva (una sola vez) y se reintenta la petición
+		if (response.status === 401 && token) {
+			const newToken = await authService.refreshToken(token);
+			response = await this.send(endpoint, method, data, options, newToken);
+
+			// Rechazado incluso con un token recién emitido: la sesión ya no es válida
+			if (response.status === 401) authService.expireSession();
+		}
+
+		if (!response.ok) {
+			throw await errorService.fromResponse(response);
+		}
+		return response;
+	}
+
 	// Método genérico para solicitudes. Siempre lanza AppError.
 	private async request<T>(
 		endpoint: string,
@@ -89,28 +117,29 @@ class ApiPinodo {
 		options: RequestOptions = {}
 	): Promise<T> {
 		try {
-			const token = this.resolveToken(options);
-			let response = await this.send(endpoint, method, data, options, token);
-
-			// Access token vencido: se renueva (una sola vez) y se reintenta la petición
-			if (response.status === 401 && token) {
-				const newToken = await authService.refreshToken(token);
-				response = await this.send(endpoint, method, data, options, newToken);
-
-				// Rechazado incluso con un token recién emitido: la sesión ya no es válida
-				if (response.status === 401) authService.expireSession();
-			}
+			const response = await this.sendWithAuth(endpoint, method, data, options);
 
 			// Manejar respuestas sin cuerpo: 204 (No Content) y 202 (Accepted, p. ej. forgot-password)
 			if (response.status === 204 || response.status === 202) {
 				return {} as T;
 			}
 
-			if (!response.ok) {
-				throw await errorService.fromResponse(response);
-			}
-
 			return await response.json();
+		} catch (error) {
+			const appError = errorService.fromUnknown(error);
+			errorService.log(appError);
+			throw appError;
+		}
+	}
+
+	/** Descarga un archivo (p. ej. un reporte en Excel). Siempre lanza AppError. */
+	async getFile(endpoint: string, options: RequestOptions = {}): Promise<ArchivoDescargado> {
+		try {
+			const response = await this.sendWithAuth(endpoint, 'GET', undefined, options);
+			return {
+				blob: await response.blob(),
+				filename: filenameFromContentDisposition(response.headers.get('Content-Disposition'))
+			};
 		} catch (error) {
 			const appError = errorService.fromUnknown(error);
 			errorService.log(appError);
@@ -147,6 +176,28 @@ class ApiPinodo {
 	async postPublic<T>(endpoint: string, data: unknown, options: RequestOptions = {}): Promise<T> {
 		return this.post<T>(endpoint, data, { ...options, requireAuth: false });
 	}
+}
+
+/**
+ * Nombre de archivo de un `Content-Disposition` (`filename*=UTF-8''…` tiene prioridad sobre
+ * `filename="…"`). null si no hay. En peticiones a otro origen el navegador solo deja leer la
+ * cabecera si la API la incluye en `Access-Control-Expose-Headers`.
+ */
+export function filenameFromContentDisposition(header: string | null): string | null {
+	if (!header) return null;
+
+	const extendido = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(header);
+	if (extendido) {
+		try {
+			return decodeURIComponent(extendido[1].trim().replace(/^"|"$/g, '')) || null;
+		} catch {
+			// Codificación inválida: se intenta con `filename`
+		}
+	}
+
+	const simple = /filename\s*=\s*("([^"]*)"|[^;]+)/.exec(header);
+	const nombre = (simple?.[2] ?? simple?.[1])?.trim();
+	return nombre || null;
 }
 
 export const apiPinodo = new ApiPinodo();

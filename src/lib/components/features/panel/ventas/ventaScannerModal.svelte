@@ -128,7 +128,7 @@
 	{#if error}
 		<AlertBox>{error}</AlertBox>
 	{/if}
-	<div class="relative aspect-[4/3] w-full overflow-hidden bg-light-black">
+	<div class="relative aspect-4/3 w-full overflow-hidden bg-light-black">
 		<video bind:this={video} class="size-full object-cover" playsinline muted></video>
 		{#if !error}
 			<!-- Guía de encuadre -->

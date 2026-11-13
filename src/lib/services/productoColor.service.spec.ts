@@ -37,16 +37,6 @@ describe('productoColorService', () => {
 });
 
 describe('skuService', () => {
-	it('update envía solo lo cambiado del SKU', async () => {
-		await skuService.update('sku', { precio: { rebajado: null } });
-		expect(api.patch).toHaveBeenCalledWith('/skus/sku', { precio: { rebajado: null } }, AUTH);
-	});
-
-	it('ajustarStock usa el endpoint de stock con el ajuste y/o el mínimo', async () => {
-		await skuService.ajustarStock('sku', { ajuste: -2, minimo: 4 });
-		expect(api.patch).toHaveBeenCalledWith('/skus/sku/stock', { ajuste: -2, minimo: 4 }, AUTH);
-	});
-
 	it('sugerirCodigoBarras hace un POST sin body', async () => {
 		api.post.mockResolvedValue({ codigo_barras: '2001234567893' });
 		await expect(skuService.sugerirCodigoBarras()).resolves.toEqual({

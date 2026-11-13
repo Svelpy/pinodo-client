@@ -193,33 +193,66 @@ export const REDES_SOCIALES_SUGERIDAS = [
 ] as const;
 
 /**
- * Tipos de movimiento de inventario (kardex). INGRESO = entrada de mercadería; VENTA = salida al
- * cobrar; ANULACION = devolución al anular una venta cobrada; AJUSTE = corrección manual del stock.
+ * Qué originó un movimiento del kardex (`TipoMovimiento` del backend). AJUSTE = un documento de
+ * ajuste de inventario (incluida la carga inicial); VENTA = al cobrar una venta; ANULACION = al
+ * anular una venta cobrada (devuelve el stock).
  */
 export const MOVIMIENTO_TIPO = {
-	INGRESO: 'INGRESO',
+	AJUSTE: 'AJUSTE',
 	VENTA: 'VENTA',
-	ANULACION: 'ANULACION',
-	AJUSTE: 'AJUSTE'
+	ANULACION: 'ANULACION'
 } as const;
 export type MovimientoTipo = (typeof MOVIMIENTO_TIPO)[keyof typeof MOVIMIENTO_TIPO];
 
 export const MOVIMIENTO_TIPO_LABEL: Record<MovimientoTipo, string> = {
-	INGRESO: 'Ingreso',
+	AJUSTE: 'Ajuste',
 	VENTA: 'Venta',
-	ANULACION: 'Anulación',
-	AJUSTE: 'Ajuste'
+	ANULACION: 'Anulación'
 };
 
 /** Variante de `Badge` para cada tipo de movimiento */
-export const MOVIMIENTO_TIPO_BADGE: Record<
-	MovimientoTipo,
-	'success' | 'info' | 'warning' | 'secondary'
-> = {
-	INGRESO: 'success',
+export const MOVIMIENTO_TIPO_BADGE: Record<MovimientoTipo, 'info' | 'warning' | 'secondary'> = {
+	AJUSTE: 'secondary',
 	VENTA: 'info',
-	ANULACION: 'warning',
-	AJUSTE: 'secondary'
+	ANULACION: 'warning'
+};
+
+/** Por qué se ajustó el stock: el motivo de un ajuste de inventario (`MotivoAjuste` del backend) */
+export const AJUSTE_MOTIVO = {
+	/** Stock con que nacen los SKUs; solo lo genera el sistema */
+	INICIAL: 'INICIAL',
+	/** Entra mercadería con su costo; recalcula el costo promedio */
+	RECEPCION: 'RECEPCION',
+	/** Conteo físico: se registra la diferencia con lo contado */
+	CONTEO: 'CONTEO',
+	/** Sale por daño o defecto */
+	MERMA: 'MERMA',
+	ROBO_PERDIDA: 'ROBO_PERDIDA',
+	/** Corrige un error de carga, en cualquier sentido */
+	CORRECCION: 'CORRECCION'
+} as const;
+export type AjusteMotivo = (typeof AJUSTE_MOTIVO)[keyof typeof AJUSTE_MOTIVO];
+
+export const AJUSTE_MOTIVO_LABEL: Record<AjusteMotivo, string> = {
+	INICIAL: 'Stock inicial',
+	RECEPCION: 'Recepción',
+	CONTEO: 'Conteo físico',
+	MERMA: 'Merma',
+	ROBO_PERDIDA: 'Robo o pérdida',
+	CORRECCION: 'Corrección'
+};
+
+/** Variante de `Badge` para cada motivo: verde entra, rojo sale, neutro en cualquier sentido */
+export const AJUSTE_MOTIVO_BADGE: Record<
+	AjusteMotivo,
+	'outline' | 'success' | 'info' | 'error' | 'secondary'
+> = {
+	INICIAL: 'outline',
+	RECEPCION: 'success',
+	CONTEO: 'info',
+	MERMA: 'error',
+	ROBO_PERDIDA: 'error',
+	CORRECCION: 'secondary'
 };
 
 /** Límites de los filtros de `GET /movimientos-inventario/costos` */
@@ -227,3 +260,15 @@ export const KARDEX_LIMITS = {
 	NOMBRE_MAX: 200,
 	CODIGO_BARRAS_MAX: 50
 } as const;
+
+/** Reportes de la página de finanzas (una pestaña cada uno) */
+export const REPORTE_FINANZAS = {
+	VENTAS: 'VENTAS',
+	RENTABILIDAD: 'RENTABILIDAD'
+} as const;
+export type ReporteFinanzas = (typeof REPORTE_FINANZAS)[keyof typeof REPORTE_FINANZAS];
+
+export const REPORTE_FINANZAS_LABEL: Record<ReporteFinanzas, string> = {
+	VENTAS: 'Ventas',
+	RENTABILIDAD: 'Rentabilidad'
+};

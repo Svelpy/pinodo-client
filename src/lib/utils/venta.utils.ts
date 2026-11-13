@@ -14,11 +14,11 @@ import type {
 	ListVentasParams,
 	PagoLinea,
 	SkuInventario,
+	Venta,
 	VentaBorrador,
 	VentaDetalle,
 	VentaFiltros,
 	VentaItemRequest,
-	VentaPago,
 	VentaResumen
 } from '#lib/interfaces/index.ts';
 import { todayISO } from './date';
@@ -128,10 +128,23 @@ export function calcularCambio(total: number, pagaCon: string): number | null {
 
 // ── Pagos ─────────────────────────────────────────────────────────────────────────────────────
 
-/** Métodos usados en los pagos, sin repetir y en orden de aparición: "QR + Efectivo" */
-export function metodosPagoTexto(pagos: readonly Pick<VentaPago, 'metodo'>[]): string | null {
-	const metodos = [...new Set(pagos.map((pago) => pago.metodo))];
-	return metodos.length ? metodos.map((metodo) => METODO_PAGO_LABEL[metodo]).join(' + ') : null;
+/** Métodos de pago de la venta, sin repetir: los del listado o, en un detalle, los de sus pagos */
+export function metodosDeVenta(venta: Venta | VentaDetalle): MetodoPago[] {
+	if (venta.metodos_pago) return venta.metodos_pago;
+	return 'pagos' in venta ? [...new Set(venta.pagos.map((pago) => pago.metodo))] : [];
+}
+
+/** La venta tal como la muestra el listado (p. ej. tras cobrarla o cancelarla desde él) */
+export function ventaDesdeDetalle(detalle: VentaDetalle): Venta {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { items, pagos, ...venta } = detalle;
+	return { ...venta, metodos_pago: metodosDeVenta(detalle) };
+}
+
+/** Métodos de pago en texto, sin repetir y en orden: "QR + Efectivo" */
+export function metodosPagoTexto(metodos: readonly MetodoPago[]): string | null {
+	const unicos = [...new Set(metodos)];
+	return unicos.length ? unicos.map((metodo) => METODO_PAGO_LABEL[metodo]).join(' + ') : null;
 }
 
 export interface CobroPorMetodo {
@@ -334,13 +347,37 @@ export function sincronizarLineas(
 	return cambio ? result : [...lineas];
 }
 
+/** true si la línea tiene hoy un precio distinto al ofrecido (no se sabe si salió del catálogo) */
+export function precioCambio(linea: CarritoLinea): boolean {
+	return (
+		linea.precio_actual !== null && toCents(linea.precio_actual) !== toCents(linea.precio_unitario)
+	);
+}
+
 /** true si alguna línea tiene hoy un precio distinto al ofrecido */
 export function hayPreciosDistintos(lineas: readonly CarritoLinea[]): boolean {
-	return lineas.some(
-		(linea) =>
-			linea.precio_actual !== null &&
-			toCents(linea.precio_actual) !== toCents(linea.precio_unitario)
-	);
+	return lineas.some(precioCambio);
+}
+
+export interface ComparacionPrecios {
+	/** Líneas cuyo precio de hoy difiere del ofrecido */
+	cambiadas: number;
+	/** Total con los precios con que se ofreció el pedido */
+	totalOfrecido: number;
+	/** Total con los precios de hoy */
+	totalHoy: number;
+}
+
+/** Total del pedido con los precios ofrecidos frente al total con los de hoy */
+export function compararPrecios(
+	lineas: readonly CarritoLinea[],
+	descuentoGlobal = 0
+): ComparacionPrecios {
+	return {
+		cambiadas: lineas.filter(precioCambio).length,
+		totalOfrecido: calcularTotales(lineas, descuentoGlobal, false).total,
+		totalHoy: calcularTotales(lineas, descuentoGlobal, true).total
+	};
 }
 
 // ── Catálogo de la caja ───────────────────────────────────────────────────────────────────────
@@ -446,7 +483,7 @@ export function normalizarTelefonoWhatsapp(telefono: string | null | undefined):
 /** Texto del pedido para enviarlo al cliente por WhatsApp */
 export function mensajeWhatsappVenta(venta: VentaDetalle, tiendaNombre?: string | null): string {
 	const esPedido = venta.estado === VENTA_ESTADO.PENDIENTE;
-	const metodos = metodosPagoTexto(venta.pagos);
+	const metodos = metodosPagoTexto(metodosDeVenta(venta));
 	const lineas = [
 		tiendaNombre ? `*${tiendaNombre}*` : null,
 		`${esPedido ? 'Pedido' : 'Venta'} ${formatVentaNumero(venta.numero)}`,

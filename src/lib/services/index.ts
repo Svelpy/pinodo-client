@@ -16,3 +16,5 @@ export * from './usuario.service';
 export * from './venta.service';
 export * from './tiendaPublica.service';
 export * from './kardex.service';
+export * from './ajusteInventario.service';
+export * from './finanzas.service';

@@ -1,10 +1,18 @@
 <script lang="ts">
-	import { AlertBox, Button, Input, SegmentedPicker, TextArea } from '#lib/components/ui/index.ts';
+	import {
+		AlertBox,
+		Button,
+		Input,
+		SegmentedControl,
+		SegmentedPicker,
+		TextArea
+	} from '#lib/components/ui/index.ts';
 	import { VENTA_CANAL, type VentaCanal } from '#lib/constants/index.ts';
 	import { UserIcon } from '#lib/icons/outline/index.ts';
 	import type { CarritoAccion, CarritoLinea, VentaCheckoutValues } from '#lib/interfaces/index.ts';
 	import {
 		calcularTotales,
+		compararPrecios,
 		formatCurrency,
 		parseMonto,
 		tieneErrores,
@@ -21,7 +29,7 @@
 		pagaCon: string;
 		/** nueva = registrar; edicion = pedido guardado */
 		modo?: 'nueva' | 'edicion';
-		/** Edición: cobrar con los precios de hoy */
+		/** Edición: guardar con los precios de hoy (`recalcular_precios`) */
 		recalcular?: boolean;
 		/** Edición: hay precios distintos a los ofrecidos y se puede elegir */
 		mostrarRecalcular?: boolean;
@@ -31,9 +39,11 @@
 		submitError?: string;
 		/** Acción en curso */
 		submitting?: CarritoAccion | null;
-		/** Puede cobrar ahora (además de guardar como pedido) */
+		/** Puede cobrar ahora (además de guardar como pedido); en edición nunca: se cobra desde el detalle */
 		puedeCobrar?: boolean;
 		onSubmit: (accion: CarritoAccion) => void;
+		/** Sin el encabezado "Cobro" (en la hoja de móvil el título lo pone la propia hoja) */
+		hideHeader?: boolean;
 	}
 
 	let {
@@ -47,7 +57,8 @@
 		submitError = '',
 		submitting = null,
 		puedeCobrar = true,
-		onSubmit
+		onSubmit,
+		hideHeader = false
 	}: Props = $props();
 
 	const id = $props.id();
@@ -62,7 +73,7 @@
 	const esWhatsapp = $derived(checkout.canal === VENTA_CANAL.WHATSAPP);
 	const aDistancia = $derived(esCanalADistancia(checkout.canal));
 	// En mostrador lo normal es cobrar; un pedido a distancia (WhatsApp, redes…) se guarda hasta que pague
-	const cobrarPrincipal = $derived(puedeCobrar && (modo === 'edicion' || !aDistancia));
+	const cobrarPrincipal = $derived(puedeCobrar && !aDistancia);
 
 	let clienteAbierto = $state(false);
 	let extrasAbierto = $state(false);
@@ -73,23 +84,29 @@
 		extrasAbierto || !!checkout.descuento || !!checkout.nota || !!errores.descuento
 	);
 
-	const cobrarLabel = $derived(
-		modo === 'edicion'
-			? `Guardar y cobrar ${formatCurrency(totales.total)}`
-			: `Cobrar ${formatCurrency(totales.total)}`
-	);
+	const cobrarLabel = $derived(`Cobrar ${formatCurrency(totales.total)}`);
 	const pedidoLabel = $derived(modo === 'edicion' ? 'Guardar cambios' : 'Guardar pedido');
+
+	// Edición: cuánto cambia el total si se usan los precios de hoy
+	const comparacion = $derived(compararPrecios(lineas, descuentoGlobal));
+	const diferencia = $derived(comparacion.totalHoy - comparacion.totalOfrecido);
+	const PRECIO_OPCIONES = [
+		{ value: 'ofrecidos', label: 'Mantener ofrecidos' },
+		{ value: 'hoy', label: 'Usar los de hoy' }
+	] as const;
 
 	const disclosureClass =
 		'inline-flex h-9 items-center gap-1.5 text-sm font-medium text-light-accent hover:underline dark:text-dark-accent';
 </script>
 
-<div class="flex h-full min-h-0 flex-col">
-	<header class="shrink-0 border-b border-light-one_d px-3 py-2.5 sm:px-4 dark:border-dark-one_d">
-		<h2 class="font-semibold text-light-two dark:text-dark-two">
-			{modo === 'edicion' ? 'Cobro del pedido' : 'Cobro'}
-		</h2>
-	</header>
+<div class="flex h-full min-h-0 flex-1 flex-col">
+	{#if !hideHeader}
+		<header class="shrink-0 border-b border-light-one_d px-3 py-2.5 sm:px-4 dark:border-dark-one_d">
+			<h2 class="font-semibold text-light-two dark:text-dark-two">
+				{modo === 'edicion' ? 'Resumen del pedido' : 'Cobro'}
+			</h2>
+		</header>
+	{/if}
 
 	<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
 		<!-- Datos del cobro -->
@@ -98,7 +115,7 @@
 				label="Canal"
 				options={CANAL_OPCIONES.frecuentes}
 				more={CANAL_OPCIONES.mas}
-				moreLabel="Más canales"
+				moreLabel="Más"
 				value={checkout.canal}
 				onChange={(canal: VentaCanal) => (checkout.canal = canal)}
 				disabled={submitting !== null}
@@ -183,25 +200,70 @@
 			{/if}
 
 			{#if mostrarRecalcular}
-				<label
-					class="flex cursor-pointer items-start gap-2.5 border border-light-one_d p-3 text-sm dark:border-dark-one_d"
+				<section
+					aria-labelledby="{id}-precios"
+					class="space-y-3 border border-light-warning/60 bg-light-warning/5 p-3 dark:border-dark-warning/50 dark:bg-dark-warning/10"
 				>
-					<input
-						type="checkbox"
-						bind:checked={recalcular}
+					<div>
+						<h3 id="{id}-precios" class="text-sm font-semibold text-light-two dark:text-dark-two">
+							Precios
+						</h3>
+						<p class="text-sm text-light-two_d dark:text-dark-two_d">
+							{comparacion.cambiadas === 1
+								? '1 prenda cambió de precio'
+								: `${comparacion.cambiadas} prendas cambiaron de precio`} desde que se ofreció el pedido.
+							¿Con cuáles lo guardas?
+						</p>
+					</div>
+					<SegmentedControl
+						label="Precios del pedido"
+						showLabel={false}
+						options={PRECIO_OPCIONES}
+						value={recalcular ? 'hoy' : 'ofrecidos'}
+						onChange={(opcion) => (recalcular = opcion === 'hoy')}
 						disabled={submitting !== null}
-						class="mt-0.5 size-4 accent-light-three dark:accent-dark-three"
+						columns={2}
 					/>
-					<span>
-						<span class="font-medium text-light-two dark:text-dark-two">
-							Actualizar a los precios de hoy
-						</span>
-						<span class="block text-light-two_d dark:text-dark-two_d">
-							Algunos precios cambiaron desde que se ofreció el pedido. Sin marcar, se conserva el
-							precio ofrecido.
-						</span>
-					</span>
-				</label>
+					<dl class="grid grid-cols-2 gap-2 text-sm tabular-nums">
+						<div>
+							<dt class="text-xs text-light-two_d dark:text-dark-two_d">Total ofrecido</dt>
+							<dd
+								class={[
+									'font-semibold',
+									recalcular
+										? 'text-light-two_d line-through dark:text-dark-two_d'
+										: 'text-light-two dark:text-dark-two'
+								]}
+							>
+								{formatCurrency(comparacion.totalOfrecido)}
+							</dd>
+						</div>
+						<div>
+							<dt class="text-xs text-light-two_d dark:text-dark-two_d">
+								Total con precios de hoy
+							</dt>
+							<dd
+								class={[
+									'font-semibold',
+									recalcular
+										? 'text-light-two dark:text-dark-two'
+										: 'text-light-two_d line-through dark:text-dark-two_d'
+								]}
+							>
+								{formatCurrency(comparacion.totalHoy)}
+							</dd>
+						</div>
+					</dl>
+					{#if diferencia !== 0}
+						<p class="text-xs text-light-two_d dark:text-dark-two_d">
+							Con los precios de hoy el cliente paga
+							<span class="font-semibold text-light-two dark:text-dark-two">
+								{formatCurrency(Math.abs(diferencia))}
+								{diferencia > 0 ? 'más' : 'menos'}</span
+							>. Los descuentos que pusiste se mantienen.
+						</p>
+					{/if}
+				</section>
 			{/if}
 		</div>
 	</div>
@@ -276,5 +338,10 @@
 				{pedidoLabel}
 			</Button>
 		</div>
+		{#if modo === 'edicion'}
+			<p class="text-center text-xs text-light-two_d dark:text-dark-two_d">
+				El pedido sigue pendiente: lo cobras desde su detalle.
+			</p>
+		{/if}
 	</footer>
 </div>

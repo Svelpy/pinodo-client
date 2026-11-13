@@ -68,13 +68,8 @@
 		}
 	}
 
-	function handleGuardado(actualizada: VentaDetalle, cobrada: boolean) {
-		alert(
-			'success',
-			cobrada
-				? `Venta ${formatVentaNumero(actualizada.numero)} cobrada.`
-				: `Pedido ${formatVentaNumero(actualizada.numero)} actualizado.`
-		);
+	function handleGuardado(actualizada: VentaDetalle) {
+		alert('success', `Pedido ${formatVentaNumero(actualizada.numero)} actualizado.`);
 		goto(resolve('/panel/ventas/historial/[id]', { id: actualizada.id }));
 	}
 

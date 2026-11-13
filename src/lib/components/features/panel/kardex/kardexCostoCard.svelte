@@ -6,7 +6,7 @@
 		skuNombreDesdeCosto,
 		varianteSku
 	} from '#lib/utils/index.ts';
-	import KardexCostoLink from './kardexCostoLink.svelte';
+	import KardexSkuLink from './kardexSkuLink.svelte';
 	import KardexSku from './kardexSku.svelte';
 
 	interface Props {
@@ -23,7 +23,7 @@
 <article class="border border-light-one_d bg-light-one p-4 dark:border-dark-one_d dark:bg-dark-one">
 	<div class="flex items-start gap-2">
 		<KardexSku {sku} mostrarCodigo class="flex-1 text-sm" />
-		<KardexCostoLink
+		<KardexSkuLink
 			skuId={costo.sku_id}
 			nombre="{costo.producto_nombre}, {varianteSku(sku)}"
 			class="-mt-1.5 -mr-2 shrink-0"

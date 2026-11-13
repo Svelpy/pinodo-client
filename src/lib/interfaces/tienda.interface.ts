@@ -14,13 +14,15 @@ export interface Tienda {
 	horario: Record<string, string> | null;
 	/** Red social → URL, p. ej. `{ instagram: 'https://instagram.com/tienda' }` */
 	redes_sociales: Record<string, string> | null;
+	/** Solo lectura aquí: se cambia con `PATCH /config/mantenimiento`, no desde "Mi negocio" */
 	en_mantenimiento: boolean;
 	updated_at: string | null;
 }
 
 /**
  * Body de `PATCH /config/` (se envía como multipart): solo los campos modificados. `null` borra un
- * texto opcional; `horario` y `redes_sociales` se reemplazan completos (`{}` los vacía).
+ * texto opcional; `horario` y `redes_sociales` se reemplazan completos (`{}` los vacía). El modo
+ * mantenimiento no se edita aquí.
  */
 export interface UpdateTiendaRequest {
 	nombre_tienda?: string;
@@ -33,7 +35,6 @@ export interface UpdateTiendaRequest {
 	ciudad?: string | null;
 	horario?: Record<string, string>;
 	redes_sociales?: Record<string, string>;
-	en_mantenimiento?: boolean;
 	logo?: File;
 	favicon?: File;
 	eliminar_logo?: boolean;
@@ -68,7 +69,6 @@ export interface TiendaFormValues {
 	/** Siempre los 7 días, de lunes a domingo */
 	horario: HorarioDiaForm[];
 	redes_sociales: RedSocialForm[];
-	en_mantenimiento: boolean;
 }
 
 /** Logo y favicon del formulario: un archivo nuevo reemplaza al actual; `eliminar` lo quita */

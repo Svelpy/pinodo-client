@@ -5,7 +5,6 @@ import {
 	productoColorSchema,
 	productoDatosSchema,
 	productoSchema,
-	skuStockSchema,
 	type ProductoInput
 } from './producto.schema';
 
@@ -17,6 +16,7 @@ const sku = (overrides: Record<string, unknown> = {}) => ({
 	codigo_barras: '8412345678905',
 	is_visible: true,
 	precio: { normal: '29,95', rebajado: '19.95', rebaja_hasta: '2026-12-31' },
+	costo: '12,50',
 	stock: { cantidad: '12', minimo: '3' },
 	...overrides
 });
@@ -57,8 +57,30 @@ describe('productoSchema', () => {
 			codigo_barras: '8412345678905',
 			is_visible: true,
 			precio: { normal: 29.95, rebajado: 19.95, rebaja_hasta: '2026-12-31' },
+			costo: 12.5,
 			stock: { cantidad: 12, minimo: 3 }
 		});
+	});
+
+	it('el costo vacío no se envía (la API usa 0) y no admite negativos ni más de 2 decimales', () => {
+		const sinCosto = productoSchema.parse(
+			valid({ colores: [color({ skus: [sku({ costo: ' ' })] })] })
+		);
+		expect(sinCosto.colores[0].skus[0].costo).toBeUndefined();
+		expect(JSON.stringify(sinCosto.colores[0].skus[0])).not.toContain('costo');
+
+		const cero = productoSchema.parse(valid({ colores: [color({ skus: [sku({ costo: '0' })] })] }));
+		expect(cero.colores[0].skus[0].costo).toBe(0);
+
+		for (const costo of ['-1', '1.234', 'abc']) {
+			const result = productoSchema.safeParse(
+				valid({ colores: [color({ skus: [sku({ costo })] })] })
+			);
+			expect(result.success).toBe(false);
+			if (!result.success) {
+				expect(result.error.issues[0].path).toEqual(['colores', 0, 'skus', 0, 'costo']);
+			}
+		}
 	});
 
 	it('acepta un producto solo con los datos generales (sin categorías ni colores)', () => {
@@ -207,41 +229,5 @@ describe('productoColorSchema', () => {
 	it('conserva el id de un SKU ya guardado', () => {
 		const result = productoColorSchema.parse(color({ skus: [sku({ id: UUID(6) })] }));
 		expect(result.skus[0].id).toBe(UUID(6));
-	});
-});
-
-describe('skuStockSchema', () => {
-	it('una entrada da un ajuste positivo y una salida uno negativo', () => {
-		expect(skuStockSchema.parse({ movimiento: 'entrada', cantidad: ' 5 ', minimo: '' })).toEqual({
-			ajuste: 5,
-			minimo: null
-		});
-		expect(skuStockSchema.parse({ movimiento: 'salida', cantidad: '3', minimo: '2' })).toEqual({
-			ajuste: -3,
-			minimo: 2
-		});
-	});
-
-	it('se puede cambiar solo el mínimo (incluso a 0)', () => {
-		expect(skuStockSchema.parse({ movimiento: 'entrada', cantidad: '', minimo: '0' })).toEqual({
-			ajuste: null,
-			minimo: 0
-		});
-	});
-
-	it('exige una cantidad o un mínimo', () => {
-		const result = skuStockSchema.safeParse({ movimiento: 'entrada', cantidad: '', minimo: '' });
-		expect(result.error?.issues[0].path).toEqual(['cantidad']);
-	});
-
-	it('rechaza cantidad 0, decimales, negativos y mínimos inválidos', () => {
-		for (const cantidad of ['0', '1.5', '-1', 'abc']) {
-			expect(
-				skuStockSchema.safeParse({ movimiento: 'entrada', cantidad, minimo: '' }).success
-			).toBe(false);
-		}
-		expect(
-			skuStockSchema.safeParse({ movimiento: 'entrada', cantidad: '1', minimo: '-1' }).success
-		).toBe(false);
 	});
 });

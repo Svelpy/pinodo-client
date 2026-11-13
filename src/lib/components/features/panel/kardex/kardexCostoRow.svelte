@@ -8,7 +8,7 @@
 		skuNombreDesdeCosto,
 		varianteSku
 	} from '#lib/utils/index.ts';
-	import KardexCostoLink from './kardexCostoLink.svelte';
+	import KardexSkuLink from './kardexSkuLink.svelte';
 	import KardexSku from './kardexSku.svelte';
 
 	interface Props {
@@ -47,6 +47,6 @@
 		{formatCurrency(costo.valor)}
 	</TableCell>
 	<TableCell class="px-2 py-3 text-right">
-		<KardexCostoLink skuId={costo.sku_id} nombre="{costo.producto_nombre}, {varianteSku(sku)}" />
+		<KardexSkuLink skuId={costo.sku_id} nombre="{costo.producto_nombre}, {varianteSku(sku)}" />
 	</TableCell>
 </TableRow>

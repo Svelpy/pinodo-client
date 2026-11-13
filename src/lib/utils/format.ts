@@ -159,6 +159,21 @@ export function formatDateTime(dateString?: string): string {
 		hour12: true
 	});
 }
+
+/**
+ * Fecha y hora por separado, en hora local (p. ej. `{ fecha: "13 nov 2026", hora: "01:10 p. m." }`),
+ * para mostrarlas en dos líneas
+ */
+export function formatDateTimeParts(dateString?: string | null): { fecha: string; hora: string } {
+	const date = isNullish(dateString) ? null : new Date(dateString);
+	if (!date || isNaN(date.getTime())) return { fecha: NO_DATA_LABEL, hora: '' };
+
+	return {
+		fecha: date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+		hora: date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })
+	};
+}
+
 /**
  * Nombre completo de un usuario (p. ej. "Carlos Pérez López"); sin apellidos, solo el nombre
  */
@@ -283,4 +298,39 @@ export function formatSignedNumber(
 	const text = new Intl.NumberFormat('es-ES').format(Math.abs(value));
 	if (value > 0) return `+${text}`;
 	return value < 0 ? `−${text}` : text;
+}
+
+/**
+ * Proporción de 0 a 1 como porcentaje (0.395 → "39,5 %"). Las partes mínimas no se redondean a
+ * cero (0.0004 → "<0,1 %").
+ */
+export function formatPercent(
+	value: number | null | undefined,
+	options?: BaseOptions & { maximumFractionDigits?: number }
+): string {
+	const fallback = options?.fallback ?? NO_DATA_LABEL;
+	if (isNullish(value) || Number.isNaN(value)) return fallback;
+
+	const maximumFractionDigits = options?.maximumFractionDigits ?? 1;
+	const format = (number: number) =>
+		new Intl.NumberFormat('es-ES', {
+			style: 'percent',
+			minimumFractionDigits: 0,
+			maximumFractionDigits
+		}).format(number);
+
+	const minimo = 10 ** -(maximumFractionDigits + 2);
+	if (value !== 0 && Math.abs(value) < minimo) {
+		return `${value < 0 ? '>-' : '<'}${format(minimo)}`;
+	}
+	return format(value);
+}
+
+/** Mes de un año (p. ej. 2026, 10 → "octubre 2026") */
+export function formatMesAnio(anio: number, mes: number, options?: BaseOptions): string {
+	const fallback = options?.fallback ?? NO_DATA_LABEL;
+	if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) return fallback;
+
+	const nombre = new Date(anio, mes - 1, 1).toLocaleDateString('es-ES', { month: 'long' });
+	return `${nombre} ${anio}`;
 }

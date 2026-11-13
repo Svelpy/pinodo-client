@@ -147,8 +147,7 @@ export const tiendaSchema = z.object({
 	),
 	ciudad: optionalText(TIENDA_LIMITS.CIUDAD_MAX, 'La ciudad'),
 	horario: horarioSchema,
-	redes_sociales: redesSchema,
-	en_mantenimiento: z.boolean()
+	redes_sociales: redesSchema
 });
 
 export type TiendaFormData = z.output<typeof tiendaSchema>;

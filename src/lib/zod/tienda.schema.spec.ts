@@ -15,7 +15,6 @@ const valores = (overrides: Partial<TiendaFormValues> = {}): TiendaFormValues =>
 	ciudad: '',
 	horario: DIAS_SEMANA.map((dia) => ({ dia, abierto: false, apertura: '09:00', cierre: '18:00' })),
 	redes_sociales: [],
-	en_mantenimiento: false,
 	...overrides
 });
 

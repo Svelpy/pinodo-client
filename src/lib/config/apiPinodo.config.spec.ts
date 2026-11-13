@@ -22,7 +22,7 @@ vi.mock('#lib/services/index.ts', () => {
 	};
 });
 
-import { apiPinodo } from './apiPinodo.config';
+import { apiPinodo, filenameFromContentDisposition } from './apiPinodo.config';
 
 describe('apiPinodo sin token', () => {
 	beforeEach(() => {
@@ -59,5 +59,57 @@ describe('apiPinodo sin token', () => {
 		expect(fetchMock).not.toHaveBeenCalled();
 		const [, init] = loadFetch.mock.calls[0] as unknown as [string, RequestInit];
 		expect(init.headers).not.toHaveProperty('Authorization');
+	});
+});
+
+describe('apiPinodo.getFile', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.stubGlobal('fetch', fetchMock);
+		auth.getToken.mockReturnValue('token');
+	});
+
+	it('devuelve el archivo con el nombre que propone la API y envía el token', async () => {
+		fetchMock.mockResolvedValue(
+			new Response('xlsx', {
+				status: 200,
+				headers: { 'Content-Disposition': 'attachment; filename="ventas.xlsx"' }
+			})
+		);
+
+		const archivo = await apiPinodo.getFile('/finanzas/ventas/excel', { requireAuth: true });
+
+		expect(await archivo.blob.text()).toBe('xlsx');
+		expect(archivo.filename).toBe('ventas.xlsx');
+		const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+		expect(init.headers).toHaveProperty('Authorization', 'Bearer token');
+	});
+
+	it('con el token vencido lo renueva y reintenta una vez', async () => {
+		auth.refreshToken.mockResolvedValue('nuevo');
+		fetchMock
+			.mockResolvedValueOnce(new Response('', { status: 401 }))
+			.mockResolvedValueOnce(new Response('xlsx', { status: 200 }));
+
+		const archivo = await apiPinodo.getFile('/finanzas/ventas/excel', { requireAuth: true });
+
+		expect(auth.refreshToken).toHaveBeenCalledWith('token');
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(archivo.filename).toBeNull();
+	});
+});
+
+describe('filenameFromContentDisposition', () => {
+	it.each([
+		['attachment; filename="reporte.xlsx"', 'reporte.xlsx'],
+		['attachment; filename=reporte.xlsx', 'reporte.xlsx'],
+		[
+			'attachment; filename="reporte.xlsx"; filename*=UTF-8\'\'reporte%20de%20ventas.xlsx',
+			'reporte de ventas.xlsx'
+		],
+		['inline', null],
+		[null, null]
+	])('%s → %s', (header, expected) => {
+		expect(filenameFromContentDisposition(header)).toBe(expected);
 	});
 });

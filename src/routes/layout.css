@@ -122,6 +122,15 @@ body {
 	margin: 0;
 }
 
+/* Un <fieldset> no se encoge por debajo de su contenido (min-width: min-content por defecto): en
+   móvil un formulario ancho desbordaría la pantalla con scroll horizontal. En @layer base para
+   que min-w-* siga funcionando. */
+@layer base {
+	fieldset {
+		min-width: 0;
+	}
+}
+
 /* En pantallas táctiles los campos van a 16px como mínimo: con menos, iOS hace zoom al enfocarlos.
    Va fuera de @layer para ganarle a text-xs/text-sm; se respetan los campos que ya usan un tamaño mayor. */
 @media (pointer: coarse) {

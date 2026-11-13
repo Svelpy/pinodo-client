@@ -148,7 +148,7 @@
 			title="Identidad"
 			description="Cómo se presenta tu tienda a los clientes y en el panel."
 		>
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<Input
 					id="{id}-nombre"
 					class="sm:col-span-2"
@@ -195,7 +195,7 @@
 			title="Contacto"
 			description="Los clientes envían sus pedidos al WhatsApp; el resto se muestra en el pie de la tienda."
 		>
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<Input
 					id="{id}-whatsapp"
 					type="tel"
@@ -236,7 +236,7 @@
 		</FormSection>
 
 		<FormSection title="Ubicación" description="Dónde pueden visitarte.">
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<Input
 					id="{id}-direccion"
 					label="Dirección (opcional)"
@@ -292,35 +292,6 @@
 				{errors}
 				disabled={isSaving || readonly}
 			/>
-		</FormSection>
-
-		<FormSection title="Mantenimiento">
-			<label class="flex cursor-pointer items-start gap-3">
-				<input
-					type="checkbox"
-					bind:checked={values.en_mantenimiento}
-					class="mt-1 size-4 shrink-0 accent-light-three dark:accent-dark-three"
-					aria-describedby="{id}-mantenimiento-hint"
-				/>
-				<span>
-					<span class="block text-sm font-medium text-light-two dark:text-dark-two">
-						Tienda en mantenimiento
-					</span>
-					<span
-						id="{id}-mantenimiento-hint"
-						class="block text-sm text-light-two_d dark:text-dark-two_d"
-					>
-						Los clientes verán un aviso en lugar de la tienda. El panel sigue funcionando.
-					</span>
-				</span>
-			</label>
-			{#if values.en_mantenimiento}
-				<AlertBox variant="warning" class="mt-4">
-					{tienda.en_mantenimiento
-						? 'La tienda está cerrada al público.'
-						: 'Al guardar, la tienda dejará de estar visible para los clientes.'}
-				</AlertBox>
-			{/if}
 		</FormSection>
 	</fieldset>
 

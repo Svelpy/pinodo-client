@@ -1,6 +1,7 @@
 import { redirect, type LoadEvent } from '@sveltejs/kit';
 import { resolve } from '$app/paths';
 import type { Role } from '#lib/config/permissions.config.ts';
+import { resolveRoute } from '#lib/config/routeAccess.config.ts';
 import { authStore } from '#lib/stores/index.ts';
 import { canAccessRoute, getHomeRoute, isRole } from './rbac.utils';
 import { buildSignInUrl } from './signInUrl';
@@ -33,7 +34,7 @@ export async function guardRoute({ route, url, untrack }: GuardEvent): Promise<R
 		redirect(307, resolve('/auth/sign-in'));
 	}
 
-	if (!canAccessRoute(role, route.id)) redirect(307, resolve(getHomeRoute(role)));
+	if (!canAccessRoute(role, route.id)) redirect(307, resolveRoute(getHomeRoute(role)));
 
 	return role;
 }

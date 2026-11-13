@@ -25,14 +25,16 @@ describe('kardexService', () => {
 			page: 2,
 			per_page: 50,
 			sku_id: 's1',
-			tipo: 'VENTA',
+			tipo: 'AJUSTE',
+			motivo: 'RECEPCION',
+			ajuste_id: 'a1',
 			venta_id: 'v1',
-			created_by: 'u1',
+			user_id: 'u1',
 			desde: '2026-11-01',
 			hasta: '2026-11-10'
 		});
 		expect(api.get).toHaveBeenCalledWith(
-			'/movimientos-inventario/?page=2&per_page=50&sku_id=s1&tipo=VENTA&venta_id=v1&created_by=u1&desde=2026-11-01&hasta=2026-11-10',
+			'/movimientos-inventario/?page=2&per_page=50&sku_id=s1&tipo=AJUSTE&motivo=RECEPCION&ajuste_id=a1&venta_id=v1&user_id=u1&desde=2026-11-01&hasta=2026-11-10',
 			AUTH
 		);
 	});

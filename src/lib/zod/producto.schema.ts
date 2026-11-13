@@ -56,6 +56,14 @@ const optionalPrice = (label: string) =>
 		.refine((value) => value === '' || DECIMAL_REGEX.test(value), { message: priceMessage(label) })
 		.transform((value) => (value === '' ? null : toNumber(value)));
 
+// Vacío no se envía (undefined desaparece del JSON): la API usa su valor por defecto
+const omittablePrice = (label: string) =>
+	z
+		.string()
+		.trim()
+		.refine((value) => value === '' || DECIMAL_REGEX.test(value), { message: priceMessage(label) })
+		.transform((value) => (value === '' ? undefined : toNumber(value)));
+
 const requiredInteger = (label: string) =>
 	z
 		.string()
@@ -96,6 +104,11 @@ export const productoSkuSchema = z.object({
 			path: ['rebajado'],
 			message: 'El precio rebajado no puede superar al normal.'
 		}),
+	/**
+	 * Costo por prenda, solo en SKUs nuevos (≥ 0; vacío = la API usa 0). El stock inicial entra al
+	 * kardex a este costo. En uno guardado no se envía: corregiría el costo promedio a ciegas.
+	 */
+	costo: omittablePrice('El costo'),
 	stock: z.object({
 		cantidad: requiredInteger('La cantidad'),
 		minimo: requiredInteger('El mínimo')
@@ -139,36 +152,6 @@ export const productoDatosSchema = z.object({
 	is_visible: z.boolean(),
 	categoria_ids: z.array(z.string().refine(isUuid, { message: 'Categoría no válida.' }))
 });
-
-/**
- * Ajuste de stock de un SKU (`PATCH /skus/{id}/stock`). La API recibe `ajuste` (cuántas prendas
- * entran o salen, distinto de 0) y/o `minimo`; al menos uno. Aquí el usuario indica el sentido
- * (entrada o salida) y una cantidad positiva, y el resultado ya trae `ajuste` con su signo.
- */
-export const skuStockSchema = z
-	.object({
-		movimiento: z.enum(['entrada', 'salida']),
-		cantidad: z
-			.string()
-			.trim()
-			.refine((value) => value === '' || /^[1-9]\d*$/.test(value), {
-				message: 'La cantidad debe ser un número entero mayor que 0.'
-			}),
-		minimo: z
-			.string()
-			.trim()
-			.refine((value) => value === '' || INTEGER_REGEX.test(value), {
-				message: 'El mínimo debe ser un número entero, 0 o mayor.'
-			})
-	})
-	.refine(({ cantidad, minimo }) => cantidad !== '' || minimo !== '', {
-		path: ['cantidad'],
-		message: 'Indica una cantidad que entra o sale, o un nuevo mínimo.'
-	})
-	.transform(({ movimiento, cantidad, minimo }) => ({
-		ajuste: cantidad === '' ? null : (movimiento === 'salida' ? -1 : 1) * Number(cantidad),
-		minimo: minimo === '' ? null : Number(minimo)
-	}));
 
 export const productoSchema = productoDatosSchema
 	.extend({ colores: z.array(productoColorSchema) })

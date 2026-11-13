@@ -1,12 +1,9 @@
 import { apiPinodo } from '#lib/config/index.ts';
 import type {
-	AjustarStockRequest,
 	ListInventarioParams,
 	PaginatedResponse,
-	ProductoSku,
 	SkuInventario,
-	SugerirCodigoBarrasResponse,
-	UpdateSkuRequest
+	SugerirCodigoBarrasResponse
 } from '#lib/interfaces/index.ts';
 import { buildPaginationQuery } from '#lib/utils/index.ts';
 
@@ -43,19 +40,6 @@ class SkuService {
 		return apiPinodo.get<PaginatedResponse<SkuInventario>>(`/skus/inventario?${query}`, {
 			requireAuth: true
 		});
-	}
-
-	/** Solo cambia lo enviado, también dentro de precio (`precio.rebajado: null` quita la rebaja) */
-	async update(id: string, data: UpdateSkuRequest): Promise<ProductoSku> {
-		return apiPinodo.patch<ProductoSku>(`/skus/${id}`, data, { requireAuth: true });
-	}
-
-	/**
-	 * Suma `ajuste` (positivo entra, negativo sale) al stock actual, así nunca pisa lo que mueven las
-	 * ventas, y/o cambia el `minimo`. 409 con `stock_actual` en `details` si quedaría negativo.
-	 */
-	async ajustarStock(id: string, data: AjustarStockRequest): Promise<ProductoSku> {
-		return apiPinodo.patch<ProductoSku>(`/skus/${id}/stock`, data, { requireAuth: true });
 	}
 
 	/**

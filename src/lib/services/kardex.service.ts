@@ -11,14 +11,18 @@ import { buildPaginationQuery } from '#lib/utils/index.ts';
 /** Kardex: movimientos de inventario y costo del stock (`/movimientos-inventario/`) */
 class KardexService {
 	/**
-	 * Del más reciente al más antiguo. Con `sku_id` es el kardex de ese SKU (`saldo` es el stock que
-	 * dejó cada movimiento). `desde` y `hasta` son fechas de la tienda, ambas incluidas.
+	 * Kardex valorizado, del más reciente al más antiguo. Cada fila trae la prenda (`sku`), el
+	 * documento que la causó (`origen`) y el usuario responsable. Con `sku_id` es el kardex de ese
+	 * SKU. `motivo` filtra por el motivo del ajuste; `ajuste_id` y `venta_id`, por documento;
+	 * `user_id`, por responsable. `desde` y `hasta` son fechas de la tienda, ambas incluidas.
 	 */
 	async list({
 		sku_id,
 		tipo,
+		motivo,
+		ajuste_id,
 		venta_id,
-		created_by,
+		user_id,
 		desde,
 		hasta,
 		...pagination
@@ -26,8 +30,10 @@ class KardexService {
 		const query = buildPaginationQuery(pagination);
 		if (sku_id) query.set('sku_id', sku_id);
 		if (tipo) query.set('tipo', tipo);
+		if (motivo) query.set('motivo', motivo);
+		if (ajuste_id) query.set('ajuste_id', ajuste_id);
 		if (venta_id) query.set('venta_id', venta_id);
-		if (created_by) query.set('created_by', created_by);
+		if (user_id) query.set('user_id', user_id);
 		if (desde) query.set('desde', desde);
 		if (hasta) query.set('hasta', hasta);
 		return apiPinodo.get<PaginatedResponse<MovimientoInventario>>(

@@ -9,3 +9,4 @@ export * from './usuario.schema';
 export * from './venta.schema';
 export * from './tienda.schema';
 export * from './perfil.schema';
+export * from './ajusteInventario.schema';

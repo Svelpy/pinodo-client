@@ -56,7 +56,7 @@
 
 	const labelClass = 'mb-1 block text-xs font-medium text-light-two_d dark:text-dark-two_d';
 	const dateClass =
-		'block h-11 w-full border border-light-four bg-light-one px-3 text-base text-light-two outline-none hover:border-light-two focus:border-light-three dark:border-dark-four_d dark:bg-dark-one dark:text-dark-two dark:[color-scheme:dark] dark:focus:border-dark-three';
+		'block h-11 w-full border border-light-four bg-light-one px-3 text-base text-light-two outline-none hover:border-light-two focus:border-light-three dark:border-dark-four_d dark:bg-dark-one dark:text-dark-two dark:scheme-dark dark:focus:border-dark-three';
 </script>
 
 <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:flex xl:flex-wrap xl:items-end">

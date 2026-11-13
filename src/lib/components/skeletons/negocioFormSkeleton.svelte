@@ -14,7 +14,7 @@
 			<div class={card}>
 				<div class={['mb-2 h-5 w-32', block]}></div>
 				<div class={['mb-5 h-3 w-2/3 max-w-sm', block]}></div>
-				<div class="grid gap-4 sm:grid-cols-2">
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 					{#each { length: cantidad }, i (i)}
 						<div class="space-y-2">
 							<div class={['h-4 w-24', block]}></div>

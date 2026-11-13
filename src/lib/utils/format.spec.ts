@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { NO_DATA_LABEL } from '#lib/constants/index.ts';
-import { formatInitials, formatPriceRange, formatSignedNumber } from './format';
+import {
+	formatDateTimeParts,
+	formatInitials,
+	formatMesAnio,
+	formatPercent,
+	formatPriceRange,
+	formatSignedNumber
+} from './format';
 
 describe('formatInitials', () => {
 	it('toma la inicial de las dos primeras palabras en mayúsculas', () => {
@@ -47,5 +54,53 @@ describe('formatSignedNumber', () => {
 	it('usa el fallback sin valor', () => {
 		expect(formatSignedNumber(null)).toBe(NO_DATA_LABEL);
 		expect(formatSignedNumber(undefined, { fallback: '' })).toBe('');
+	});
+});
+
+describe('formatDateTimeParts', () => {
+	it('separa fecha y hora en hora local', () => {
+		// Sin "Z": hora local, para no depender de la zona horaria de la máquina
+		const { fecha, hora } = formatDateTimeParts('2026-11-13T13:10:00');
+		expect(fecha).toMatch(/13.+nov.+2026/);
+		expect(hora).toMatch(/^01:10/);
+		expect(hora).toMatch(/p/);
+	});
+
+	it('sin fecha o inválida usa el texto por defecto', () => {
+		expect(formatDateTimeParts(null)).toEqual({ fecha: NO_DATA_LABEL, hora: '' });
+		expect(formatDateTimeParts('no-es-fecha')).toEqual({ fecha: NO_DATA_LABEL, hora: '' });
+	});
+});
+
+describe('formatPercent', () => {
+	// Intl separa el número del signo con un espacio duro
+	const plain = (text: string) => text.replace(/\s/g, ' ');
+
+	it('convierte una proporción en porcentaje con un decimal', () => {
+		expect(plain(formatPercent(0.395))).toBe('39,5 %');
+		expect(plain(formatPercent(0.4867))).toBe('48,7 %');
+		expect(plain(formatPercent(1))).toBe('100 %');
+		expect(plain(formatPercent(0))).toBe('0 %');
+		expect(plain(formatPercent(-0.12))).toMatch(/^-12 %$/);
+	});
+
+	it('las partes mínimas no se muestran como cero', () => {
+		expect(plain(formatPercent(0.0004))).toBe('<0,1 %');
+	});
+
+	it('sin valor usa el texto por defecto', () => {
+		expect(formatPercent(null)).toBe(NO_DATA_LABEL);
+		expect(formatPercent(Number.NaN)).toBe(NO_DATA_LABEL);
+	});
+});
+
+describe('formatMesAnio', () => {
+	it('nombra el mes con su año', () => {
+		expect(formatMesAnio(2026, 10)).toBe('octubre 2026');
+		expect(formatMesAnio(2027, 1)).toBe('enero 2027');
+	});
+
+	it('un mes inválido usa el texto por defecto', () => {
+		expect(formatMesAnio(2026, 13)).toBe(NO_DATA_LABEL);
 	});
 });

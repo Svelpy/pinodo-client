@@ -15,6 +15,7 @@ import {
 	calcularCambio,
 	calcularLinea,
 	calcularTotales,
+	compararPrecios,
 	desgloseCobrado,
 	esCodigoBarras,
 	estadoPagos,
@@ -22,6 +23,7 @@ import {
 	hayPreciosDistintos,
 	lineasDesdeVenta,
 	mensajeWhatsappVenta,
+	metodosDeVenta,
 	metodosPagoTexto,
 	normalizarTelefonoWhatsapp,
 	nuevoPago,
@@ -30,6 +32,7 @@ import {
 	sincronizarLineas,
 	toItemsRequest,
 	validarLinea,
+	ventaDesdeDetalle,
 	ventaFiltrosToParams
 } from './venta.utils';
 
@@ -247,6 +250,34 @@ describe('carrito', () => {
 	});
 });
 
+describe('compararPrecios', () => {
+	it('sin cambios los dos totales coinciden', () => {
+		expect(compararPrecios([linea({ cantidad: 2 })])).toEqual({
+			cambiadas: 0,
+			totalOfrecido: 39.9,
+			totalHoy: 39.9
+		});
+	});
+
+	it('suma lo que sube y lo que baja, con el descuento global', () => {
+		const lineas = [
+			linea({ sku_id: 'a', precio_unitario: 20, precio_actual: 25, cantidad: 2 }),
+			linea({ sku_id: 'b', precio_unitario: 30, precio_actual: 27.5 })
+		];
+		expect(compararPrecios(lineas)).toEqual({ cambiadas: 2, totalOfrecido: 70, totalHoy: 77.5 });
+		expect(compararPrecios(lineas, 10)).toEqual({
+			cambiadas: 2,
+			totalOfrecido: 60,
+			totalHoy: 67.5
+		});
+	});
+
+	it('una prenda fuera del catálogo conserva su precio y no cuenta como cambiada', () => {
+		const lineas = [linea({ precio_unitario: 20, precio_actual: null, eliminado: true })];
+		expect(compararPrecios(lineas)).toEqual({ cambiadas: 0, totalOfrecido: 20, totalHoy: 20 });
+	});
+});
+
 describe('sincronizarLineas', () => {
 	it('actualiza stock y precio de hoy sin cambiar el precio cobrado', () => {
 		const [l] = sincronizarLineas(
@@ -303,9 +334,20 @@ describe('whatsapp', () => {
 describe('pagos', () => {
 	it('metodosPagoTexto junta los métodos sin repetir', () => {
 		expect(metodosPagoTexto([])).toBeNull();
-		expect(metodosPagoTexto([pago('QR', 10), pago('EFECTIVO', 5), pago('QR', 1)])).toBe(
-			'QR + Efectivo'
-		);
+		expect(metodosPagoTexto(['QR', 'EFECTIVO', 'QR'])).toBe('QR + Efectivo');
+	});
+
+	it('metodosDeVenta usa los del listado o los deduce de los pagos', () => {
+		const pagos = [pago('QR', 10), pago('EFECTIVO', 5), pago('QR', 1)];
+		expect(metodosDeVenta({ ...venta, pagos })).toEqual(['QR', 'EFECTIVO']);
+		expect(metodosDeVenta({ ...venta, pagos, metodos_pago: ['TARJETA'] })).toEqual(['TARJETA']);
+	});
+
+	it('ventaDesdeDetalle quita ítems y pagos y completa los métodos', () => {
+		const fila = ventaDesdeDetalle({ ...venta, pagos: [pago('VALES', 80)] });
+		expect(fila).not.toHaveProperty('items');
+		expect(fila).not.toHaveProperty('pagos');
+		expect(fila.metodos_pago).toEqual(['VALES']);
 	});
 
 	it('desgloseCobrado ordena de mayor a menor y omite los ceros', () => {

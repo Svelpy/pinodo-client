@@ -100,11 +100,11 @@ describe('buildTiendaPatch', () => {
 		expect(patch).toEqual({ horario: { lunes: '09:00-20:00' }, redes_sociales: {} });
 	});
 
-	it('envía el modo mantenimiento si cambia', () => {
-		const patch = patchDe(tienda(), (values) => {
-			values.en_mantenimiento = true;
+	it('nunca envía el modo mantenimiento (se cambia con PATCH /config/mantenimiento)', () => {
+		const patch = patchDe(tienda({ en_mantenimiento: true }), (values) => {
+			values.ciudad = 'La Paz';
 		});
-		expect(patch).toEqual({ en_mantenimiento: true });
+		expect(patch).toEqual({ ciudad: 'La Paz' });
 	});
 
 	it('un archivo nuevo reemplaza la imagen; quitar solo se envía si hay una guardada', () => {

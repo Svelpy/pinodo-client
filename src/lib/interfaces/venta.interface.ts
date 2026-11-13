@@ -44,6 +44,8 @@ export interface Venta {
 	 * venta cobrada, lo que se devolvió
 	 */
 	total_pagado: number;
+	/** Métodos de sus pagos, sin repetir (vacío en un pedido pendiente) */
+	metodos_pago: MetodoPago[];
 	nota: string | null;
 	confirmada_at: string | null;
 	cancelada_at: string | null;
@@ -71,7 +73,9 @@ export interface VentaPago {
 /**
  * Venta con sus ítems y pagos (`GET /ventas/{id}` y respuesta de crear, editar y cambiar estado)
  */
-export interface VentaDetalle extends Venta {
+export interface VentaDetalle extends Omit<Venta, 'metodos_pago'> {
+	/** El listado siempre lo trae; aquí se deduce de `pagos` si no viene (ver `metodosDeVenta`) */
+	metodos_pago?: MetodoPago[];
 	items: VentaItem[];
 	pagos: VentaPago[];
 }

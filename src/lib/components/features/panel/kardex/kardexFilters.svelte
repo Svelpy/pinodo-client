@@ -1,21 +1,24 @@
 <script lang="ts">
 	import { Select } from '#lib/components/ui/index.ts';
 	import {
+		AJUSTE_MOTIVO,
+		AJUSTE_MOTIVO_LABEL,
 		KARDEX_LIMITS,
 		MOVIMIENTO_TIPO,
 		MOVIMIENTO_TIPO_LABEL,
 		RANGO_FECHA,
 		RANGO_FECHA_LABEL,
+		type AjusteMotivo,
 		type MovimientoTipo,
 		type RangoFecha
 	} from '#lib/constants/index.ts';
 	import { LoaderIcon, ScanBarcodeIcon } from '#lib/icons/outline/index.ts';
 	import type { KardexFiltros } from '#lib/interfaces/index.ts';
-	import { todayISO } from '#lib/utils/index.ts';
+	import { admiteMotivo, todayISO } from '#lib/utils/index.ts';
 
 	interface Props {
 		filtros: KardexFiltros;
-		/** Usuarios para filtrar por quién originó el movimiento; null = sin ese filtro */
+		/** Usuarios para filtrar por el responsable del movimiento; null = sin ese filtro */
 		usuarios: readonly { id: string; nombre: string }[] | null;
 		onChange: (filtros: KardexFiltros) => void;
 		/** Busca un SKU por su código de barras para ver su kardex (Enter o lector de códigos) */
@@ -52,6 +55,11 @@
 		set({ rango: value });
 	}
 
+	function handleTipo(value: MovimientoTipo | null) {
+		// El motivo es de los ajustes: con otro tipo se quita
+		set({ tipo: value, motivo: admiteMotivo(value) ? filtros.motivo : null });
+	}
+
 	function handleCodigoSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		const value = codigo.trim();
@@ -60,7 +68,7 @@
 
 	const labelClass = 'mb-1 block text-xs font-medium text-light-two_d dark:text-dark-two_d';
 	const fieldClass =
-		'block h-11 w-full border border-light-four bg-light-one px-3 text-base text-light-two outline-none hover:border-light-two focus:border-light-three dark:border-dark-four_d dark:bg-dark-one dark:text-dark-two dark:[color-scheme:dark] dark:focus:border-dark-three';
+		'block h-11 w-full border border-light-four bg-light-one px-3 text-base text-light-two outline-none hover:border-light-two focus:border-light-three dark:border-dark-four_d dark:bg-dark-one dark:text-dark-two dark:scheme-dark dark:focus:border-dark-three';
 </script>
 
 <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:flex xl:flex-wrap xl:items-start">
@@ -108,7 +116,7 @@
 		<Select
 			id="{id}-tipo"
 			value={filtros.tipo ?? ''}
-			onchange={(event) => set({ tipo: (event.currentTarget.value as MovimientoTipo) || null })}
+			onchange={(event) => handleTipo((event.currentTarget.value as MovimientoTipo) || null)}
 		>
 			<option value="">Todos</option>
 			{#each Object.values(MOVIMIENTO_TIPO) as value (value)}
@@ -117,13 +125,29 @@
 		</Select>
 	</div>
 
+	{#if admiteMotivo(filtros.tipo)}
+		<div class="xl:w-44">
+			<label for="{id}-motivo" class={labelClass}>Motivo del ajuste</label>
+			<Select
+				id="{id}-motivo"
+				value={filtros.motivo ?? ''}
+				onchange={(event) => set({ motivo: (event.currentTarget.value as AjusteMotivo) || null })}
+			>
+				<option value="">Todos</option>
+				{#each Object.values(AJUSTE_MOTIVO) as value (value)}
+					<option {value}>{AJUSTE_MOTIVO_LABEL[value]}</option>
+				{/each}
+			</Select>
+		</div>
+	{/if}
+
 	{#if usuarios}
 		<div class="xl:w-52">
-			<label for="{id}-usuario" class={labelClass}>Usuario</label>
+			<label for="{id}-usuario" class={labelClass}>Responsable</label>
 			<Select
 				id="{id}-usuario"
-				value={filtros.created_by ?? ''}
-				onchange={(event) => set({ created_by: event.currentTarget.value || null })}
+				value={filtros.user_id ?? ''}
+				onchange={(event) => set({ user_id: event.currentTarget.value || null })}
 			>
 				<option value="">Todos</option>
 				{#each usuarios as usuario (usuario.id)}

@@ -27,6 +27,7 @@ const PANEL_ROUTES = [
 	'/panel/secciones',
 	'/panel/usuarios',
 	'/panel/mi-negocio',
+	'/panel/finanzas',
 	'/panel/perfil'
 ];
 
@@ -44,7 +45,8 @@ const DENIED_ROUTES: Record<Role, string[]> = {
 		'/panel/archivos',
 		'/panel/secciones',
 		'/panel/usuarios',
-		'/panel/mi-negocio'
+		'/panel/mi-negocio',
+		'/panel/finanzas'
 	]
 };
 
@@ -81,6 +83,13 @@ describe('canAccessRoute', () => {
 
 	it.each(Object.values(Role))('%s no accede a /app', (role) => {
 		expect(canAccessRoute(role, '/app')).toBe(false);
+	});
+
+	it('solo SUPERADMIN, OWNER y ADMIN abren Finanzas', () => {
+		for (const role of [Role.SUPERADMIN, Role.OWNER, Role.ADMIN]) {
+			expect(canAccessRoute(role, '/panel/finanzas')).toBe(true);
+		}
+		expect(canAccessRoute(Role.CAJERO, '/panel/finanzas')).toBe(false);
 	});
 
 	it('solo OWNER y ADMIN abren Mi negocio', () => {
@@ -124,9 +133,14 @@ describe('canAccessRoute', () => {
 });
 
 describe('can', () => {
-	// Módulos que no son ventas ni el negocio (este último es una sola fila: nadie lo crea ni elimina)
+	// Módulos que no son ventas, el negocio (una sola fila: nadie lo crea ni elimina), el kardex
+	// (no se edita ni se elimina) ni finanzas (solo reportes)
 	const GESTION = Object.values(Module).filter(
-		(module) => module !== Module.VENTA && module !== Module.NEGOCIO
+		(module) =>
+			module !== Module.VENTA &&
+			module !== Module.NEGOCIO &&
+			module !== Module.MOVIMIENTO_INVENTARIO &&
+			module !== Module.FINANZAS
 	);
 
 	it.each([Role.SUPERADMIN, Role.OWNER])('%s tiene todas las acciones fuera de ventas', (role) => {
@@ -145,6 +159,31 @@ describe('can', () => {
 		}
 		for (const module of GESTION) {
 			expect(can(Role.ADMIN, module, Action.CREATE)).toBe(true);
+		}
+	});
+
+	it('kardex: SUPERADMIN todo; OWNER y ADMIN leen y registran ajustes; el CAJERO no lo ve', () => {
+		for (const action of Object.values(Action)) {
+			expect(can(Role.SUPERADMIN, Module.MOVIMIENTO_INVENTARIO, action)).toBe(true);
+			expect(can(Role.CAJERO, Module.MOVIMIENTO_INVENTARIO, action)).toBe(false);
+		}
+		for (const role of [Role.OWNER, Role.ADMIN]) {
+			expect(can(role, Module.MOVIMIENTO_INVENTARIO, Action.READ)).toBe(true);
+			expect(can(role, Module.MOVIMIENTO_INVENTARIO, Action.CREATE)).toBe(true);
+			expect(can(role, Module.MOVIMIENTO_INVENTARIO, Action.UPDATE)).toBe(false);
+			expect(can(role, Module.MOVIMIENTO_INVENTARIO, Action.DELETE)).toBe(false);
+		}
+	});
+
+	it('finanzas: SUPERADMIN, OWNER y ADMIN solo leen los reportes; el CAJERO no los ve', () => {
+		for (const role of [Role.SUPERADMIN, Role.OWNER, Role.ADMIN]) {
+			expect(can(role, Module.FINANZAS, Action.READ)).toBe(true);
+			for (const action of [Action.CREATE, Action.UPDATE, Action.DELETE]) {
+				expect(can(role, Module.FINANZAS, action)).toBe(false);
+			}
+		}
+		for (const action of Object.values(Action)) {
+			expect(can(Role.CAJERO, Module.FINANZAS, action)).toBe(false);
 		}
 	});
 

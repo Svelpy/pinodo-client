@@ -14,7 +14,7 @@
 	const headClass = 'h-11 text-xs tracking-wide text-light-two_d uppercase dark:text-dark-two_d';
 </script>
 
-<div class="overflow-x-auto">
+<div class="relative overflow-x-auto">
 	<Table class="table-fixed text-sm lg:min-w-[240] xl:min-w-[300]">
 		<TableHeader>
 			<TableRow class="border-light-one_d hover:bg-transparent dark:border-dark-one_d">

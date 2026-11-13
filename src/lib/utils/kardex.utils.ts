@@ -1,12 +1,15 @@
-import { RANGO_FECHA } from '#lib/constants/index.ts';
+import { MOVIMIENTO_TIPO, RANGO_FECHA } from '#lib/constants/index.ts';
 import type {
+	AjusteFiltros,
 	CostoSku,
 	KardexFiltros,
+	ListAjustesParams,
 	ListMovimientosParams,
-	SkuInventario,
+	MovimientoOrigen,
 	SkuNombre
 } from '#lib/interfaces/index.ts';
 import { todayISO } from './date';
+import { formatVentaNumero } from './format';
 import { rangoFechas } from './venta.utils';
 
 /** Parámetros de `GET /movimientos-inventario/` para los filtros elegidos (sin paginación) */
@@ -21,30 +24,47 @@ export function kardexFiltrosToParams(
 	return {
 		...fechas,
 		tipo: filtros.tipo ?? undefined,
-		created_by: filtros.created_by ?? undefined,
+		// El motivo es de los ajustes: con otro tipo no hay nada que filtrar
+		motivo: admiteMotivo(filtros.tipo) ? (filtros.motivo ?? undefined) : undefined,
+		user_id: filtros.user_id ?? undefined,
 		sku_id: filtros.sku_id ?? undefined
 	};
 }
 
-/** Nombre de un SKU del inventario */
-export function skuNombreDesdeInventario(sku: SkuInventario): SkuNombre {
+/** Parámetros de `GET /ajustes-inventario/` para los filtros elegidos (sin paginación) */
+export function ajusteFiltrosToParams(
+	filtros: AjusteFiltros,
+	today: string = todayISO()
+): Omit<ListAjustesParams, 'page' | 'per_page'> {
+	const fechas =
+		filtros.rango === RANGO_FECHA.PERSONALIZADO
+			? { desde: filtros.desde || undefined, hasta: filtros.hasta || undefined }
+			: rangoFechas(filtros.rango, today);
 	return {
-		producto_id: sku.producto_id,
-		producto_nombre: sku.producto_nombre,
-		color_nombre: sku.color_nombre,
-		color_codigo_hex: sku.color_codigo_hex,
-		talla_etiqueta: sku.talla_etiqueta,
-		codigo_barras: sku.codigo_barras
+		...fechas,
+		motivo: filtros.motivo ?? undefined,
+		created_by: filtros.created_by ?? undefined
 	};
 }
 
-/** Nombre de un SKU de la consulta de costos (no trae el color en hex) */
+/** El filtro de motivo solo tiene sentido con todos los tipos o con ajustes */
+export function admiteMotivo(tipo: KardexFiltros['tipo']): boolean {
+	return tipo === null || tipo === MOVIMIENTO_TIPO.AJUSTE;
+}
+
+/** Documento que causó el movimiento: "Ajuste #12" o "Venta #000009" */
+export function formatOrigen(origen: Pick<MovimientoOrigen, 'tipo' | 'numero'>): string {
+	return origen.tipo === 'VENTA'
+		? `Venta ${formatVentaNumero(origen.numero)}`
+		: `Ajuste #${origen.numero}`;
+}
+
+/** Nombre de un SKU de la consulta de costos */
 export function skuNombreDesdeCosto(costo: CostoSku): SkuNombre {
 	return {
 		producto_id: costo.producto_id,
 		producto_nombre: costo.producto_nombre,
 		color_nombre: costo.color_nombre,
-		color_codigo_hex: null,
 		talla_etiqueta: costo.talla_etiqueta,
 		codigo_barras: costo.codigo_barras
 	};
@@ -53,18 +73,6 @@ export function skuNombreDesdeCosto(costo: CostoSku): SkuNombre {
 /** "Azul marino · M" */
 export function varianteSku(sku: Pick<SkuNombre, 'color_nombre' | 'talla_etiqueta'>): string {
 	return `${sku.color_nombre} · ${sku.talla_etiqueta}`;
-}
-
-/**
- * Valor de un movimiento: unidades movidas × costo unitario. null si no tiene costo.
- * Va en céntimos para no arrastrar errores de coma flotante.
- */
-export function valorMovimiento(movimiento: {
-	cantidad: number;
-	costo_unitario: number | null;
-}): number | null {
-	if (movimiento.costo_unitario === null || movimiento.costo_unitario === undefined) return null;
-	return (Math.abs(movimiento.cantidad) * Math.round(movimiento.costo_unitario * 100)) / 100;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

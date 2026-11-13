@@ -16,3 +16,5 @@ export * from './usuario.interface';
 export * from './venta.interface';
 export * from './tiendaPublica.interface';
 export * from './kardex.interface';
+export * from './ajusteInventario.interface';
+export * from './finanzas.interface';

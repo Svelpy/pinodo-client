@@ -14,6 +14,13 @@
 		children: Snippet;
 		/** Acciones fijas al pie (no se desplazan con el contenido) */
 		footer?: Snippet;
+		/**
+		 * Ocupa toda la pantalla en móvil (sin asa ni fondo a la vista); desde md es un diálogo de alto
+		 * fijo. Para flujos largos, como el cobro de la caja.
+		 */
+		fullScreen?: boolean;
+		/** El contenido gestiona su propio relleno y scroll (p. ej. porque tiene su propio pie fijo) */
+		bare?: boolean;
 	}
 
 	let {
@@ -24,7 +31,9 @@
 		dismissible = true,
 		hideTitle = false,
 		children,
-		footer
+		footer,
+		fullScreen = false,
+		bare = false
 	}: Props = $props();
 
 	const id = $props.id();
@@ -69,22 +78,38 @@
 	aria-describedby={description ? `${id}-description` : undefined}
 	oncancel={handleCancel}
 	onclick={handleBackdropClick}
-	class="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden border-0 bg-light-one p-0 text-light-two transition-[translate,opacity] duration-300 ease-out backdrop:bg-light-black/50 backdrop:backdrop-blur-sm motion-reduce:transition-none md:m-auto md:max-h-[85dvh] md:max-w-lg dark:bg-dark-one dark:text-dark-two dark:backdrop:bg-dark-black/50 starting:translate-y-full md:starting:translate-y-4 md:starting:opacity-0"
+	class={[
+		'm-0 w-full max-w-none overflow-hidden border-0 bg-light-one p-0 text-light-two transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none md:m-auto md:max-w-lg dark:bg-dark-one dark:text-dark-two starting:translate-y-full md:starting:translate-y-4 md:starting:opacity-0',
+		fullScreen
+			? 'h-dvh max-h-dvh backdrop:bg-transparent md:h-[85dvh] md:max-h-[85dvh] md:backdrop:bg-light-black/50 md:backdrop:backdrop-blur-sm dark:md:backdrop:bg-dark-black/50'
+			: 'mt-auto max-h-[92dvh] backdrop:bg-light-black/50 backdrop:backdrop-blur-sm md:max-h-[85dvh] dark:backdrop:bg-dark-black/50'
+	]}
 >
-	<div class="flex max-h-[inherit] flex-col">
-		<!-- Asa: indica que es una hoja (solo móvil) -->
-		<div
-			class="mx-auto mt-2.5 h-1.5 w-10 shrink-0 bg-light-one_d md:hidden dark:bg-dark-one_d"
-			aria-hidden="true"
-		></div>
+	<div class={['flex flex-col', fullScreen ? 'h-full' : 'max-h-[inherit]']}>
+		{#if !fullScreen}
+			<!-- Asa: indica que es una hoja (solo móvil) -->
+			<div
+				class="mx-auto mt-2.5 h-1.5 w-10 shrink-0 bg-light-one_d md:hidden dark:bg-dark-one_d"
+				aria-hidden="true"
+			></div>
+		{/if}
 
-		<header class="flex shrink-0 items-start gap-3 px-5 pt-3 pb-1 md:px-6 md:pt-6">
+		<header
+			class={[
+				'flex shrink-0 gap-3',
+				fullScreen
+					? 'items-center border-b border-light-one_d py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))] pr-2 pl-4 md:pt-1.5 dark:border-dark-one_d'
+					: 'items-start px-5 pt-3 pb-1 md:px-6 md:pt-6'
+			]}
+		>
 			<div class="min-w-0 flex-1">
 				<h2
 					id="{id}-title"
 					class={hideTitle
 						? 'sr-only'
-						: 'text-lg font-bold text-light-two md:text-xl dark:text-dark-two'}
+						: fullScreen
+							? 'font-semibold text-light-two dark:text-dark-two'
+							: 'text-lg font-bold text-light-two md:text-xl dark:text-dark-two'}
 				>
 					{title}
 				</h2>
@@ -105,16 +130,24 @@
 					type="button"
 					onclick={onClose}
 					aria-label="Cerrar"
-					class="-mt-1 -mr-2 inline-flex size-10 shrink-0 items-center justify-center text-light-two_d transition-colors hover:bg-light-one_d focus-visible:ring-2 focus-visible:ring-light-three/40 focus-visible:outline-none active:scale-90 dark:text-dark-two_d dark:hover:bg-dark-one_d dark:focus-visible:ring-dark-three/40"
+					class="{fullScreen
+						? ''
+						: '-mt-1 -mr-2'} inline-flex size-10 shrink-0 items-center justify-center text-light-two_d transition-colors hover:bg-light-one_d focus-visible:ring-2 focus-visible:ring-light-three/40 focus-visible:outline-none active:scale-90 dark:text-dark-two_d dark:hover:bg-dark-one_d dark:focus-visible:ring-dark-three/40"
 				>
 					<XIcon class="size-5" />
 				</button>
 			{/if}
 		</header>
 
-		<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 md:px-6">
-			{@render children()}
-		</div>
+		{#if bare}
+			<div class="flex min-h-0 flex-1 flex-col">
+				{@render children()}
+			</div>
+		{:else}
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-3 pb-5 md:px-6">
+				{@render children()}
+			</div>
+		{/if}
 
 		{#if footer}
 			<footer

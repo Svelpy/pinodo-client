@@ -13,7 +13,7 @@
 			{/each}
 		</div>
 		<div
-			class="grid animate-pulse gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]"
+			class="grid animate-pulse grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]"
 		>
 			<div class={card}>
 				<div class="border-b border-light-one_d px-4 py-3 dark:border-dark-one_d">

@@ -44,6 +44,8 @@
 	// Editar datos, colores y stock es actualizar el producto; quitar un color o el producto, eliminar
 	const canUpdate = $derived(can($currentRole, Module.PRODUCTO, Action.UPDATE));
 	const canDelete = $derived(can($currentRole, Module.PRODUCTO, Action.DELETE));
+	// El stock se mueve con ajustes de inventario (kardex); el mínimo se edita con el color
+	const canAjustarStock = $derived(can($currentRole, Module.MOVIMIENTO_INVENTARIO, Action.CREATE));
 
 	let producto = $state<ProductoDetalle | null>(null);
 	let isLoading = $state(true);
@@ -232,7 +234,9 @@
 			onDirtyChange={(value) => (dirty = value)}
 			onEdit={canUpdate ? openEditor : undefined}
 			onDeleteColor={canDelete ? (color) => (deletingColor = color) : undefined}
-			onAdjustStock={canUpdate ? (sku, color) => (stockTarget = { sku, color }) : undefined}
+			onAdjustStock={canUpdate || canAjustarStock
+				? (sku, color) => (stockTarget = { sku, color })
+				: undefined}
 			onCancelEdit={closeEditor}
 			onDatosSaved={handleDatosSaved}
 			onColorSaved={handleColorSaved}
@@ -267,6 +271,8 @@
 	<ProductoStockModal
 		sku={stockTarget?.sku ?? null}
 		colorNombre={stockTarget?.color.color.nombre}
+		puedeAjustar={canAjustarStock}
+		puedeMinimo={canUpdate}
 		onClose={() => (stockTarget = null)}
 		onSaved={handleStockSaved}
 	/>

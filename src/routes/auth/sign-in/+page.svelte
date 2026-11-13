@@ -13,6 +13,7 @@
 	import { authStore, currentRole } from '#lib/stores/index.ts';
 	import { MainLayout } from '#lib/components/layout/index.ts';
 	import { asset, match, resolve } from '$app/paths';
+	import { resolveRoute } from '#lib/config/index.ts';
 	import { page } from '$app/state';
 	import {
 		canAccessRoute,
@@ -49,7 +50,7 @@
 			const target = await match(redirectTo);
 			if (target && canAccessRoute(role, target.id)) return redirectTo;
 		}
-		return resolve(getHomeRoute(role));
+		return resolveRoute(getHomeRoute(role));
 	}
 
 	async function handleSubmit(event: SubmitEvent) {

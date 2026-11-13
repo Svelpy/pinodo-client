@@ -6,13 +6,14 @@
 	import type { Venta } from '#lib/interfaces/index.ts';
 	import {
 		formatCurrency,
-		formatDateTime,
+		formatDateTimeParts,
 		formatValue,
 		formatVentaNumero
 	} from '#lib/utils/index.ts';
 	import VentaActions from './ventaActions.svelte';
 	import VentaCanal from './ventaCanal.svelte';
 	import VentaEstadoBadge from './ventaEstadoBadge.svelte';
+	import VentaMetodosPago from './ventaMetodosPago.svelte';
 
 	interface Props {
 		venta: Venta;
@@ -27,6 +28,7 @@
 
 	const href = $derived(resolve('/panel/ventas/historial/[id]', { id: venta.id }));
 	const cancelada = $derived(venta.estado === VENTA_ESTADO.CANCELADA);
+	const creada = $derived(formatDateTimeParts(venta.created_at));
 
 	// La fila entera abre el detalle; el número es el enlace accesible
 	function handleClick(event: MouseEvent) {
@@ -44,8 +46,11 @@
 			{formatVentaNumero(venta.numero)}
 		</a>
 	</TableCell>
-	<TableCell class="px-4 py-3 text-sm whitespace-nowrap text-light-two_d dark:text-dark-two_d">
-		{formatDateTime(venta.created_at)}
+	<TableCell class="px-4 py-3 text-sm">
+		<time datetime={venta.created_at} class="block whitespace-nowrap">
+			<span class="block text-light-two dark:text-dark-two">{creada.fecha}</span>
+			<span class="block text-xs text-light-two_d dark:text-dark-two_d">{creada.hora}</span>
+		</time>
 	</TableCell>
 	<TableCell class="px-4 py-3 text-sm">
 		<p class="truncate text-light-two dark:text-dark-two">{formatValue(venta.referencia)}</p>
@@ -55,6 +60,9 @@
 	</TableCell>
 	<TableCell class="hidden px-4 py-3 text-sm lg:table-cell">
 		<VentaCanal canal={venta.canal} />
+	</TableCell>
+	<TableCell class="hidden px-4 py-3 text-sm lg:table-cell">
+		<VentaMetodosPago metodos={venta.metodos_pago} />
 	</TableCell>
 	{#if mostrarVendedor}
 		<TableCell

@@ -46,7 +46,9 @@
 				{@const redError = errors[`redes_sociales.${index}.red`]}
 				{@const urlError = errors[`redes_sociales.${index}.url`]}
 				<li>
-					<div class="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[12rem_1fr_auto]">
+					<div
+						class="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[12rem_minmax(0,1fr)_auto]"
+					>
 						<input
 							type="text"
 							bind:value={item.red}

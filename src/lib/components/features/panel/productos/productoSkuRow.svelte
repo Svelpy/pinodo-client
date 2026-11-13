@@ -160,6 +160,27 @@
 				</span>
 				(mín. {sku.stock.minimo}). Se ajusta desde la ficha con «Ajustar stock».
 			</p>
+			{#if sku.costo_actual !== undefined}
+				<!-- Solo si se cargó del kardex: sin el valor actual se pisaría a ciegas -->
+				<Input
+					id="{id}-costo"
+					label="Costo promedio por prenda"
+					bind:value={sku.costo}
+					error={err('costo')}
+					aria-invalid={!!err('costo')}
+					aria-describedby="{id}-costo-ayuda"
+					inputmode="decimal"
+					autocomplete="off"
+					placeholder={sku.costo_actual === null ? 'Sin costo' : '0,00'}
+				/>
+				<p
+					id="{id}-costo-ayuda"
+					class="text-xs text-light-two_d sm:col-span-1 sm:self-end lg:col-span-2 dark:text-dark-two_d"
+				>
+					Corrígelo si está mal: cambia el costo de las prendas en stock sin registrar un movimiento
+					en el kardex. Las ventas ya hechas conservan su costo.
+				</p>
+			{/if}
 		{:else}
 			<Input
 				id="{id}-cantidad"
@@ -181,6 +202,24 @@
 				autocomplete="off"
 				required
 			/>
+			<Input
+				id="{id}-costo"
+				label="Costo por prenda (opcional)"
+				bind:value={sku.costo}
+				error={err('costo')}
+				aria-invalid={!!err('costo')}
+				aria-describedby="{id}-costo-ayuda"
+				inputmode="decimal"
+				autocomplete="off"
+				placeholder="0,00"
+			/>
+			<p
+				id="{id}-costo-ayuda"
+				class="-mt-1 text-xs text-light-two_d sm:col-span-2 lg:col-span-3 dark:text-dark-two_d"
+			>
+				Lo que te cuesta cada prenda. El stock inicial entra al kardex a este costo; sin costo, a Bs
+				0.
+			</p>
 		{/if}
 	</fieldset>
 </div>

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import type { Component } from 'svelte';
 	import type { Role } from '#lib/config/index.ts';
-	import type { StaticRouteId } from '#lib/config/routeAccess.config.ts';
+	import { resolveRoute, type StaticRouteId } from '#lib/config/routeAccess.config.ts';
 	import {
 		ArrowUpRightIcon,
 		PackageIcon,
@@ -79,7 +78,7 @@
 				<li>
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- resolve() en el href -->
 					<a
-						href={resolve(atajo.route)}
+						href={resolveRoute(atajo.route)}
 						target={atajo.externo ? '_blank' : undefined}
 						rel={atajo.externo ? 'noopener' : undefined}
 						class="group flex h-full items-center gap-3 border border-light-one_d bg-light-one p-4 transition-colors hover:border-light-two dark:border-dark-one_d dark:bg-dark-one dark:hover:border-dark-two"

@@ -33,6 +33,7 @@
 		formatDate,
 		formatFullName,
 		puedeRegistrarVenta,
+		ventaDesdeDetalle,
 		ventaFiltrosToParams
 	} from '#lib/utils/index.ts';
 
@@ -152,7 +153,8 @@
 
 	// Cobrar o cancelar cambia la fila y el resumen de caja (que calcula la API): se actualiza la
 	// fila al instante y se vuelve a pedir la página para refrescar los totales
-	function handleActualizada(actualizada: VentaDetalle) {
+	function handleActualizada(detalle: VentaDetalle) {
+		const actualizada = ventaDesdeDetalle(detalle);
 		if (filtros.estado && actualizada.estado !== filtros.estado) {
 			ventas = ventas.filter((venta) => venta.id !== actualizada.id);
 		} else {

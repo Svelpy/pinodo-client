@@ -52,7 +52,9 @@
 		{#each value as dia, index (dia.dia)}
 			{@const aperturaError = errors[`horario.${index}.apertura`]}
 			{@const cierreError = errors[`horario.${index}.cierre`]}
-			<li class="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[10rem_1fr] sm:items-center">
+			<li
+				class="grid grid-cols-1 gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[10rem_minmax(0,1fr)] sm:items-center"
+			>
 				<label class="flex min-h-9 cursor-pointer items-center gap-3 text-sm font-medium">
 					<input
 						type="checkbox"

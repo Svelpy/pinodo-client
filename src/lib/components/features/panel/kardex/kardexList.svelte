@@ -3,16 +3,12 @@
 	import { AlertBox, Button, EmptyState, Pagination, Select } from '#lib/components/ui/index.ts';
 	import { PAGINATION } from '#lib/constants/index.ts';
 	import { AlertTriangleIcon, ArrowsLeftRightIcon, RefreshIcon } from '#lib/icons/outline/index.ts';
-	import type { MovimientoInventario, SkuNombre } from '#lib/interfaces/index.ts';
+	import type { MovimientoInventario } from '#lib/interfaces/index.ts';
 	import KardexCard from './kardexCard.svelte';
 	import KardexTable from './kardexTable.svelte';
 
 	interface Props {
 		movimientos: MovimientoInventario[];
-		/** Id de SKU → nombre */
-		skus: ReadonlyMap<string, SkuNombre>;
-		/** Id de usuario → nombre; null = no se muestra quién lo originó */
-		usuarios: ReadonlyMap<string, string> | null;
 		/** Kardex de un solo SKU: no se repite el producto en cada fila */
 		mostrarSku?: boolean;
 		/** Hay filtros aplicados (cambia el mensaje de lista vacía) */
@@ -26,13 +22,10 @@
 		onPageChange: (page: number) => void;
 		onPerPageChange?: (perPage: number) => void;
 		onRetry?: () => void;
-		onSelect: (movimiento: MovimientoInventario) => void;
 	}
 
 	let {
 		movimientos,
-		skus,
-		usuarios,
 		mostrarSku = true,
 		filtrada,
 		currentPage,
@@ -43,8 +36,7 @@
 		error = '',
 		onPageChange,
 		onPerPageChange,
-		onRetry,
-		onSelect
+		onRetry
 	}: Props = $props();
 
 	const hasData = $derived(movimientos.length > 0);
@@ -76,7 +68,7 @@
 			title={filtrada ? 'No hay movimientos con estos filtros' : 'Todavía no hay movimientos'}
 			description={filtrada
 				? 'Prueba con otro rango de fechas o quita algún filtro.'
-				: 'Los ingresos, ventas, anulaciones y ajustes de stock aparecerán aquí.'}
+				: 'Los ajustes de stock, las ventas cobradas y sus anulaciones aparecerán aquí.'}
 		/>
 	{:else}
 		{#if error}
@@ -98,21 +90,15 @@
 
 		<div class={['transition-opacity', isLoading && 'pointer-events-none opacity-60']}>
 			<!-- Móvil y tablet pequeña: tarjetas -->
-			<div class="grid gap-3 p-3 sm:grid-cols-2 md:hidden">
+			<div class="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 md:hidden">
 				{#each movimientos as movimiento (movimiento.id)}
-					<KardexCard
-						{movimiento}
-						sku={skus.get(movimiento.sku_id)}
-						usuario={movimiento.created_by ? usuarios?.get(movimiento.created_by) : undefined}
-						{mostrarSku}
-						{onSelect}
-					/>
+					<KardexCard {movimiento} {mostrarSku} />
 				{/each}
 			</div>
 
 			<!-- Tablet y escritorio: tabla -->
 			<div class="hidden md:block">
-				<KardexTable {movimientos} {skus} {usuarios} {mostrarSku} {onSelect} />
+				<KardexTable {movimientos} {mostrarSku} />
 			</div>
 		</div>
 

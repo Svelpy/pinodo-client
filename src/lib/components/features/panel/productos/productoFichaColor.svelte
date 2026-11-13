@@ -122,7 +122,7 @@
 			{#if color.skus.length === 0}
 				<p class="text-sm text-light-two_d dark:text-dark-two_d">Este color no tiene SKUs.</p>
 			{:else}
-				<div class="overflow-x-auto border border-light-one_d dark:border-dark-one_d">
+				<div class="relative overflow-x-auto border border-light-one_d dark:border-dark-one_d">
 					<Table class="min-w-176 text-sm">
 						<TableHeader>
 							<TableRow class="border-light-one_d hover:bg-transparent dark:border-dark-one_d">

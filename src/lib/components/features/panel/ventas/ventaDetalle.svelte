@@ -37,12 +37,13 @@
 	const headClass = 'h-11 text-xs tracking-wide text-light-two_d uppercase dark:text-dark-two_d';
 	const cardClass =
 		'border border-light-one_d bg-light-one dark:border-dark-one_d dark:bg-dark-one';
-	const dtClass = 'text-light-two_d dark:text-dark-two_d';
-	const ddClass = 'text-right font-medium text-light-two dark:text-dark-two';
+	const dtClass = 'shrink-0 text-light-two_d dark:text-dark-two_d';
+	const ddClass =
+		'min-w-0 text-right font-medium wrap-break-word text-light-two dark:text-dark-two';
 </script>
 
 <div
-	class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
+	class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
 >
 	<!-- Prendas -->
 	<section class={cardClass} aria-labelledby="venta-items-title">
@@ -59,7 +60,7 @@
 			{#each venta.items as item (item.id)}
 				<li class="flex gap-3 px-4 py-3">
 					<div class="min-w-0 flex-1">
-						<p class="truncate font-medium text-light-two dark:text-dark-two">
+						<p class="font-medium wrap-break-word text-light-two dark:text-dark-two">
 							{item.producto_nombre}
 						</p>
 						<p class="text-sm text-light-two_d dark:text-dark-two_d">
@@ -80,7 +81,7 @@
 		</ul>
 
 		<!-- Escritorio: tabla -->
-		<div class="hidden overflow-x-auto md:block">
+		<div class="relative hidden overflow-x-auto md:block">
 			<Table class="table-fixed text-sm">
 				<TableHeader>
 					<TableRow class="border-light-one_d hover:bg-transparent dark:border-dark-one_d">
@@ -96,10 +97,10 @@
 					{#each venta.items as item (item.id)}
 						<TableRow class="border-light-one_d hover:bg-transparent dark:border-dark-one_d">
 							<TableCell class="px-4 py-3">
-								<p class="truncate font-medium text-light-two dark:text-dark-two">
+								<p class="font-medium wrap-break-word text-light-two dark:text-dark-two">
 									{item.producto_nombre}
 								</p>
-								<p class="truncate text-xs text-light-two_d dark:text-dark-two_d">
+								<p class="text-xs wrap-break-word text-light-two_d dark:text-dark-two_d">
 									{item.color_nombre} · Talla {item.talla_etiqueta}{item.codigo_barras
 										? ` · ${item.codigo_barras}`
 										: ''}
@@ -206,7 +207,9 @@
 					>
 						Nota
 					</p>
-					<p class="mt-1 text-sm whitespace-pre-line text-light-two dark:text-dark-two">
+					<p
+						class="mt-1 text-sm wrap-break-word whitespace-pre-line text-light-two dark:text-dark-two"
+					>
 						{venta.nota}
 					</p>
 				</div>
@@ -242,7 +245,7 @@
 									{METODO_PAGO_LABEL[pago.metodo]}
 								</p>
 								{#if pago.referencia}
-									<p class="truncate text-xs text-light-two_d dark:text-dark-two_d">
+									<p class="text-xs wrap-break-word text-light-two_d dark:text-dark-two_d">
 										{pago.referencia}
 									</p>
 								{/if}

@@ -20,3 +20,5 @@ export * from './tienda.utils';
 export * from './motion';
 export * from './negocio.utils';
 export * from './kardex.utils';
+export * from './finanzas.utils';
+export * from './download';

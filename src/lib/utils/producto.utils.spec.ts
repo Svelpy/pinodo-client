@@ -31,6 +31,7 @@ describe('creadores del formulario', () => {
 		expect(a).toMatchObject({
 			talla_id: '',
 			is_visible: true,
+			costo: '',
 			stock: { cantidad: '0', minimo: '0' }
 		});
 		expect(createProductoColor('c1')).toMatchObject({ color_id: 'c1', imagenes: [], skus: [] });

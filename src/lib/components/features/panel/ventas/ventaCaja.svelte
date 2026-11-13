@@ -42,8 +42,8 @@
 		lineasIniciales?: CarritoLinea[];
 		/** Puede registrar o modificar ventas (si no, solo consulta el inventario) */
 		puedeVender?: boolean;
-		/** Edición guardada (y cobrada, si `cobrada`) */
-		onGuardado?: (venta: VentaDetalle, cobrada: boolean) => void;
+		/** Edición guardada; el pedido sigue pendiente y se cobra desde su detalle */
+		onGuardado?: (venta: VentaDetalle) => void;
 	}
 
 	let { venta = null, lineasIniciales = [], puedeVender = true, onGuardado }: Props = $props();
@@ -87,8 +87,8 @@
 	let resaltada = $state<string | null>(null);
 	let resaltadoTimer: ReturnType<typeof setTimeout> | undefined;
 
-	// svelte-ignore state_referenced_locally
-	const mostrarRecalcular = hayPreciosDistintos(lineasIniciales);
+	// Solo en un pedido guardado: las prendas nuevas entran con el precio de hoy
+	const mostrarRecalcular = $derived(!!venta && hayPreciosDistintos(lineas));
 	const totales = $derived(
 		calcularTotales(lineas, parseMonto(checkout.descuento) ?? 0, recalcular)
 	);
@@ -196,7 +196,6 @@
 			cobrar && pagoUnico && checkout.pagos[0].metodo === METODO_PAGO.EFECTIVO
 				? calcularCambio(totales.total, pagaCon)
 				: null;
-		let guardadoSinCobrar: VentaDetalle | null = null;
 
 		try {
 			if (!venta) {
@@ -212,29 +211,21 @@
 				return;
 			}
 
+			// Editar solo guarda: el pedido sigue PENDIENTE y se cobra desde su detalle
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const { pagos, ...datos } = result.data;
-			let actualizada = await ventaService.replaceItems(venta.id, {
+			const actualizada = await ventaService.replaceItems(venta.id, {
 				...datos,
 				items,
-				recalcular_precios: recalcular
+				...(recalcular && mostrarRecalcular && { recalcular_precios: true })
 			});
-			if (cobrar) {
-				guardadoSinCobrar = actualizada;
-				// Un pago único cubre el total que calculó la API, por si difiere en algún céntimo
-				actualizada = await ventaService.confirmar(venta.id, {
-					pagos: pagoUnico ? [{ ...pagos[0], monto: actualizada.total }] : pagos
-				});
-			}
-			onGuardado?.(actualizada, cobrar);
+			onGuardado?.(actualizada);
 		} catch (error) {
 			const fieldErrors = errorService.getFieldErrors(error);
 			erroresCheckout = Object.fromEntries(
 				Object.entries(fieldErrors).filter(([field]) => field.split('.')[0] in checkout)
 			);
-			const message = errorService.getMessage(error);
-			submitError = guardadoSinCobrar
-				? `Los cambios se guardaron, pero no se pudo cobrar: ${message}`
-				: message;
+			submitError = errorService.getMessage(error);
 			// Sin stock suficiente: se refresca la búsqueda para mostrar lo disponible
 			if (error instanceof AppError && error.status === 409) buscador?.refrescar();
 		} finally {
@@ -294,7 +285,7 @@
 	onDestroy(() => clearTimeout(resaltadoTimer));
 </script>
 
-{#snippet cobro()}
+{#snippet cobro(enHoja: boolean)}
 	<VentaCobro
 		{lineas}
 		bind:checkout
@@ -305,8 +296,9 @@
 		errores={erroresCheckout}
 		{submitError}
 		{submitting}
-		puedeCobrar={puedeVender}
+		puedeCobrar={puedeVender && !venta}
 		onSubmit={submit}
+		hideHeader={enHoja}
 	/>
 {/snippet}
 
@@ -358,7 +350,7 @@
 		aria-label="Cobro"
 		class="sticky top-20 hidden max-h-[calc(100dvh-7.5rem)] flex-col border border-light-one_d bg-light-one lg:flex dark:border-dark-one_d dark:bg-dark-one"
 	>
-		{@render cobro()}
+		{@render cobro(false)}
 	</aside>
 </div>
 
@@ -371,7 +363,9 @@
 		onclick={() => (carritoAbierto = true)}
 		disabled={lineas.length === 0}
 		class="flex h-12 w-full items-center justify-between gap-3 bg-light-three px-4 text-light-one transition-colors active:bg-light-three_d disabled:opacity-50 dark:bg-dark-three dark:text-dark-one"
-		aria-label="Continuar al cobro: {totales.unidades} {totales.unidades === 1
+		aria-label="{venta
+			? 'Revisar y guardar'
+			: 'Continuar al cobro'}: {totales.unidades} {totales.unidades === 1
 			? 'prenda'
 			: 'prendas'}, total {formatCurrency(totales.total)}"
 	>
@@ -386,25 +380,25 @@
 					</span>
 				{/if}
 			</span>
-			<span class="ml-1">Continuar al cobro</span>
+			<span class="ml-1">{venta ? 'Revisar y guardar' : 'Continuar al cobro'}</span>
 		</span>
 		<span class="text-lg font-bold tabular-nums">{formatCurrency(totales.total)}</span>
 	</button>
 </div>
 
+<!-- Pantalla completa: el cobro es largo y tiene su propio scroll y pie fijo con el total -->
 <Sheet
 	open={carritoAbierto}
-	title={venta ? 'Cobro del pedido' : 'Cobro'}
-	hideTitle
+	title={venta ? 'Guardar pedido' : 'Cobro'}
 	onClose={() => {
 		if (!submitting) carritoAbierto = false;
 	}}
 	dismissible={!submitting}
+	fullScreen
+	bare
 >
 	{#if carritoAbierto}
-		<div class="-mx-5 -mt-3 -mb-5 md:-mx-6">
-			{@render cobro()}
-		</div>
+		{@render cobro(true)}
 	{/if}
 </Sheet>
 
